@@ -323,7 +323,7 @@ public class MixingPlayer implements NewPlayer {
                                                       // placed on 0, 0. Vertex two placed on 0, 1. ....
             int x = 0;
             int y = 0;
-            while (true) {
+            for (int idx = 0; idx < mapIdToVertex.size(); idx++) {
                 // Place on top row (ID 0-9)
                 // Place on right column (ID 10-18)
                 // Place on bottom row (ID 19-27)
