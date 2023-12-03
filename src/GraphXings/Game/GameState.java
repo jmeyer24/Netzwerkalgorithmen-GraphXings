@@ -17,10 +17,6 @@ public class GameState
 	 */
 	private HashSet<Vertex> vertices;
 	/**
-	 * The set of vertices contained in the graph.
-	 */
-	private HashSet<Vertex> vertices;
-	/**
 	 * A HashMap mapping vertices to their coordinates if already placed.
 	 */
 	private HashMap<Vertex, Coordinate> vertexCoordinates;
@@ -48,7 +44,6 @@ public class GameState
 	 * @param width The width of the game board.
 	 * @param height The height of the game board.
 	 */
-	public GameState(Graph g, int width, int height)
 	public GameState(Graph g, int width, int height)
 	{
 		vertices = new HashSet<>();

@@ -35,10 +35,6 @@ public class NewMatch {
 	 */
 	private boolean isVerbose;
 	/**
-	 * If true, print all game results (true by default).
-	 */
-	private boolean isVerbose;
-	/**
 	 * Constructs a match object.
 	 * 
 	 * @param player1   The first player.
