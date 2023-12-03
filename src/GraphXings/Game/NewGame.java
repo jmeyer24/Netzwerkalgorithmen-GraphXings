@@ -192,6 +192,7 @@ public class NewGame {
 			throws NewInvalidMoveException, NewTimeOutException {
 		int turn = 0;
 		GameState gs = new GameState(g,width,height);
+		GameState gs = new GameState(g,width,height);
 		GameMove lastMove = null;
 		long timeMaximizer = 0;
 		long timeMinimizer = 0;
