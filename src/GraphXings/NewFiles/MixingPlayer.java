@@ -225,10 +225,10 @@ public class MixingPlayer implements NewPlayer {
         int maxX = center.getX() + treeWidth / 2;
         if (maxX > width)
             maxX = width;
-        int minY = center.getY() - treeWidth / 2;
+        int minY = center.getY() - treeHeight / 2;
         if (minY < 0)
             minY = 0;
-        int maxY = center.getY() + treeWidth / 2;
+        int maxY = center.getY() + treeHeight / 2;
         if (maxY > height)
             maxY = height;
         if (openTreeEndpoints.size() > 0) {
@@ -342,18 +342,18 @@ public class MixingPlayer implements NewPlayer {
                 // Place on right column (ID 10-18)
                 // Place on bottom row (ID 19-27)
                 // Place on left column (ID 28-35)
-                if (fieldID < treeWidth) {
+                if (fieldID < dynamicTreeWidth) {
                     x = fieldID + minX;
                     y = minY;
-                } else if (fieldID < treeWidth + treeHeight - 1) {
+                } else if (fieldID < dynamicTreeWidth + dynamicTreeHeight - 1) {
                     x = maxX - 1;
-                    y = minY + (fieldID - treeWidth) + 1;
-                } else if (fieldID < treeWidth * 2 + treeHeight - 2) {
-                    x = maxX - 1 - (fieldID - treeWidth - treeHeight + 2);
+                    y = minY + (fieldID - dynamicTreeWidth) + 1;
+                } else if (fieldID < dynamicTreeWidth * 2 + dynamicTreeHeight - 2) {
+                    x = maxX - 1 - (fieldID - dynamicTreeWidth - dynamicTreeHeight + 2);
                     y = maxY - 1;
                 } else if (fieldID < circumference) {
                     x = minX;
-                    y = maxY - 1 - (fieldID - 2 * treeWidth - treeHeight + 3);
+                    y = maxY - 1 - (fieldID - 2 * dynamicTreeWidth - dynamicTreeHeight + 3);
                 } else {
                     break;
                 }
@@ -372,6 +372,7 @@ public class MixingPlayer implements NewPlayer {
                     maxY--;
                     dynamicTreeHeight = dynamicTreeHeight - 2;
                     dynamicTreeWidth = dynamicTreeWidth - 2;
+                    circumference = dynamicTreeHeight * 2 + dynamicTreeWidth * 2 - 4;
                 }
             }
             // if (newMove != null && !gs.checkMoveValidity(newMove)) {
@@ -765,17 +766,17 @@ public class MixingPlayer implements NewPlayer {
     }
 
     private void writeCircleSizeToFile() {
-		// where and whom to store
-		String path = "circleOptimization.txt";
-		// store the crossings number of our player there
-		try {
-			FileWriter myWriter = new FileWriter(path, true);
-            myWriter.write("\n\ncircleSize: "+this.relativeCircleSize);
-			myWriter.close();
-		} catch (IOException e) {
-			System.out.println("An error occurred.");
-			e.printStackTrace();
-		}
+        // where and whom to store
+        String path = "circleOptimization.txt";
+        // store the crossings number of our player there
+        try {
+            FileWriter myWriter = new FileWriter(path, true);
+            myWriter.write("\n\ncircleSize: " + this.relativeCircleSize);
+            myWriter.close();
+        } catch (IOException e) {
+            System.out.println("An error occurred.");
+            e.printStackTrace();
+        }
     }
 
     /**
