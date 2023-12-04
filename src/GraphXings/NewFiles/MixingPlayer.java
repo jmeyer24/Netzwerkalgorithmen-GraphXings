@@ -1,5 +1,7 @@
 package GraphXings.NewFiles;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -91,8 +93,12 @@ public class MixingPlayer implements NewPlayer {
         this.sampleSize = 30;
         this.percentage = 0.93;
         this.relativeCircleSize = 0.5;
-        this.strategy = Strategy.Annealing;
+        this.strategy = Strategy.Mirroring;
         this.r = new Random(name.hashCode());
+        boolean writeToFile = false;
+        if (writeToFile) {
+            writeCircleSizeToFile();
+        }
     }
 
     /**
@@ -718,10 +724,10 @@ public class MixingPlayer implements NewPlayer {
 
         int a = roundToClosestInteger(x);
         int b = roundToClosestInteger(y);
-        assert (a >= 0);
-        assert (a < width);
-        assert (b >= 0);
-        assert (b < height);
+        assert a >= 0 : "1";
+        assert a < width : "2";
+        assert b >= 0 : "3";
+        assert b < height : "4";
         return new Coordinate(a, b);
     }
 
@@ -758,6 +764,20 @@ public class MixingPlayer implements NewPlayer {
         return name;
     }
 
+    private void writeCircleSizeToFile() {
+		// where and whom to store
+		String path = "circleOptimization.txt";
+		// store the crossings number of our player there
+		try {
+			FileWriter myWriter = new FileWriter(path, true);
+            myWriter.write("\n\ncircleSize: "+this.relativeCircleSize);
+			myWriter.close();
+		} catch (IOException e) {
+			System.out.println("An error occurred.");
+			e.printStackTrace();
+		}
+    }
+
     /**
      * An enum describing the strategy used
      * 
@@ -779,5 +799,4 @@ public class MixingPlayer implements NewPlayer {
     public enum ClosestBoardEdge {
         Top, Right, Bottom, Left
     }
-
 }
