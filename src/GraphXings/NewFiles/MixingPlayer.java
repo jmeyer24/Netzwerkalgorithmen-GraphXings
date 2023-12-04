@@ -75,7 +75,8 @@ public class MixingPlayer implements NewPlayer {
     private Strategy strategy;
     /**
      * The size of the circle to mirror to
-     * ranges from 0 (center point) over 1 (width/height of field) to sqrt(2) (diagonal of field)
+     * ranges from 0 (center point) over 1 (width/height of field) to sqrt(2)
+     * (diagonal of field)
      */
     private double relativeCircleSize;
 
@@ -326,6 +327,8 @@ public class MixingPlayer implements NewPlayer {
             int circumference = treeWidth * 2 + treeHeight * 2 - 4;
             int fieldID = midpointID % circumference; // Basically map a vertex to a distinct field vertex one
                                                       // placed on 0, 0. Vertex two placed on 0, 1. ....
+            int dynamicTreeWidth = treeWidth;
+            int dynamicTreeHeight = treeHeight;
             int x = 0;
             int y = 0;
             for (int idx = 0; idx < mapIdToVertex.size(); idx++) {
@@ -361,6 +364,8 @@ public class MixingPlayer implements NewPlayer {
                     minY++;
                     maxX--;
                     maxY--;
+                    dynamicTreeHeight = dynamicTreeHeight - 2;
+                    dynamicTreeWidth = dynamicTreeWidth - 2;
                 }
             }
             // if (newMove != null && !gs.checkMoveValidity(newMove)) {
@@ -535,7 +540,7 @@ public class MixingPlayer implements NewPlayer {
         if (lastMove == null) {
             double x = width * (0.5 + relativeCircleSize);
             double y = height * 0.5;
-            Coordinate c = getCoordinateClampedToPlayingField(x,y); 
+            Coordinate c = getCoordinateClampedToPlayingField(x, y);
             return new GameMove(g.getVertices().iterator().next(), c);
         }
 
@@ -569,7 +574,7 @@ public class MixingPlayer implements NewPlayer {
         // get the unit vector from the lastMove vertex towards the center
         int lastX = gs.getVertexCoordinates().get(lastMove.getVertex()).getX();
         int lastY = gs.getVertexCoordinates().get(lastMove.getVertex()).getY();
-        UnitVector uvec = new UnitVector(width/2.0-lastX, height/2.0-lastY);
+        UnitVector uvec = new UnitVector(width / 2.0 - lastX, height / 2.0 - lastY);
         // get the position on the highest probability circle
         double x = width * (0.5 + uvec.getX() * relativeCircleSize);
         double y = height * (0.5 + uvec.getY() * relativeCircleSize);
@@ -690,22 +695,22 @@ public class MixingPlayer implements NewPlayer {
         // int b = Math.max(Math.min(roundToClosestInteger(y), height-1), 0);
         // advanced: do it in the direction of the center of the field
         if (!(x >= 0 && x < width && y >= 0 && y < height)) {
-            UnitVector uvec = new UnitVector(width/2.0-x, height/2.0-y);
+            UnitVector uvec = new UnitVector(width / 2.0 - x, height / 2.0 - y);
             double alpha = 0.0;
             if (x < 0) {
-                alpha = -x/uvec.getX();
-            } else if (x > width-1) {
+                alpha = -x / uvec.getX();
+            } else if (x > width - 1) {
                 // width-1 = x + c * uvec.getX()
                 // c = (width-1 - x) / uvec.getX()
-                alpha = (width-1-x)/uvec.getX();
+                alpha = (width - 1 - x) / uvec.getX();
             }
             x += alpha * uvec.getX();
             y += alpha * uvec.getY();
 
             if (y < 0) {
-                alpha = -y/uvec.getY();
-            } else if (y > height-1) {
-                alpha = (height-1-y)/uvec.getY();
+                alpha = -y / uvec.getY();
+            } else if (y > height - 1) {
+                alpha = (height - 1 - y) / uvec.getY();
             }
             x += alpha * uvec.getX();
             y += alpha * uvec.getY();
@@ -713,10 +718,10 @@ public class MixingPlayer implements NewPlayer {
 
         int a = roundToClosestInteger(x);
         int b = roundToClosestInteger(y);
-        assert(a >= 0);
-        assert(a < width);
-        assert(b >= 0);
-        assert(b < height);
+        assert (a >= 0);
+        assert (a < width);
+        assert (b >= 0);
+        assert (b < height);
         return new Coordinate(a, b);
     }
 
