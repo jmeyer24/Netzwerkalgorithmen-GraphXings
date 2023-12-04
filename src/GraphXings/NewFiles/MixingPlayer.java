@@ -222,13 +222,13 @@ public class MixingPlayer implements NewPlayer {
         int minX = center.getX() - treeWidth / 2;
         if (minX < 0)
             minX = 0;
-        int maxX = center.getX() + treeWidth / 2;
+        int maxX = center.getX() + treeWidth / 2 + treeWidth % 2;
         if (maxX > width)
             maxX = width;
         int minY = center.getY() - treeHeight / 2;
         if (minY < 0)
             minY = 0;
-        int maxY = center.getY() + treeHeight / 2;
+        int maxY = center.getY() + treeHeight / 2 + treeHeight % 2;
         if (maxY > height)
             maxY = height;
         if (openTreeEndpoints.size() > 0) {
@@ -357,7 +357,8 @@ public class MixingPlayer implements NewPlayer {
                 } else {
                     break;
                 }
-
+                if (x > usedCoordinates.length - 1 || y > usedCoordinates[0].length - 1 || x < 0 || y < 0)
+                    break;
                 // check if it is an unplaced position
                 if (usedCoordinates[x][y] == 0) {
                     newMove = new GameMove(vertexToPlace, new Coordinate(x, y));
