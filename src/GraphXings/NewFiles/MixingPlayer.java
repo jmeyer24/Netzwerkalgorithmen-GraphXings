@@ -73,6 +73,11 @@ public class MixingPlayer implements NewPlayer {
      * The strategy used (see Strategy enum)
      */
     private Strategy strategy;
+    /**
+     * The size of the circle to mirror to
+     * ranges from 0 (center point) over 1 (width/height of field) to sqrt(2) (diagonal of field)
+     */
+    private double relativeCircleSize;
 
     private ArrayList<ArrayList<Integer>> heatMap = new ArrayList<ArrayList<Integer>>();;
     private int heatMapSize = 10;
@@ -84,6 +89,7 @@ public class MixingPlayer implements NewPlayer {
         this.name = name;
         this.sampleSize = 30;
         this.percentage = 0.93;
+        this.relativeCircleSize = 0.5;
         this.strategy = Strategy.Annealing;
         this.r = new Random(name.hashCode());
     }
@@ -126,7 +132,6 @@ public class MixingPlayer implements NewPlayer {
             addToHeatmap(lastMove.getCoordinate());
             updateFiFo(lastMove);
             betterEdgeCrossingRTree.insertVertex(lastMove.getVertex());
-
         }
         // Second: Compute the new move.
         GameMove newMove = getMove(lastMove, maximize);
@@ -521,14 +526,17 @@ public class MixingPlayer implements NewPlayer {
     }
 
     public GameMove getMirroringMove(GameMove lastMove) {
-        // place it mirrored around center point
-        // on the circle/ellipsis that is halfway between center and border
-        // (1/4 and 3/4 height or width)
+        // place it mirrored around center point on the circle/ellipsis
+        // whose size is given by this.relativeCircleSize
 
         // if it's the first move, take the first vertex and place it on the circle
         // right side, it's as good as any
+        // TODO: is it if the field is not square??
         if (lastMove == null) {
-            return new GameMove(g.getVertices().iterator().next(), new Coordinate(3 * width / 4, 0));
+            double x = width * (0.5 + relativeCircleSize);
+            double y = height * 0.5;
+            Coordinate c = getCoordinateClampedToPlayingField(x,y); 
+            return new GameMove(g.getVertices().iterator().next(), c);
         }
 
         // TODO: alternatively: get a good vertex (disregard last move)
@@ -559,20 +567,18 @@ public class MixingPlayer implements NewPlayer {
 
         // mirror around the center onto the circle of highest probabilty
         // get the unit vector from the lastMove vertex towards the center
-        int x = gs.getVertexCoordinates().get(lastMove.getVertex()).getX();
-        int y = gs.getVertexCoordinates().get(lastMove.getVertex()).getY();
-        double deltaX = width / 2.0 - x;
-        double deltaY = height / 2.0 - y;
-        double length = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-        deltaX /= length;
-        deltaY /= length;
+        int lastX = gs.getVertexCoordinates().get(lastMove.getVertex()).getX();
+        int lastY = gs.getVertexCoordinates().get(lastMove.getVertex()).getY();
+        UnitVector uvec = new UnitVector(width/2.0-lastX, height/2.0-lastY);
         // get the position on the highest probability circle
-        x = roundToClosestInteger(width / 2.0 + deltaX * width / 4.0);
-        y = roundToClosestInteger(height / 2.0 + deltaY * height / 4.0);
-        return new GameMove(v, getNearestFreeCoordinate(x, y));
+        double x = width * (0.5 + uvec.getX() * relativeCircleSize);
+        double y = height * (0.5 + uvec.getY() * relativeCircleSize);
+        return new GameMove(v, getNearestFreeCoordinate(getCoordinateClampedToPlayingField(x, y)));
     }
 
-    public Coordinate getNearestFreeCoordinate(int x, int y) {
+    public Coordinate getNearestFreeCoordinate(Coordinate c) {
+        int x = c.getX();
+        int y = c.getY();
         // if position is not taken yet, return it
         if (gs.getUsedCoordinates()[x][y] == 0) {
             return new Coordinate(x, y);
@@ -676,6 +682,42 @@ public class MixingPlayer implements NewPlayer {
         // System.out.println(largestGapMidpoint);
 
         return largestGapMidpoint;
+    }
+
+    public Coordinate getCoordinateClampedToPlayingField(double x, double y) {
+        // simple: make sure its in bounds of the playing field
+        // int a = Math.max(Math.min(roundToClosestInteger(x), width-1), 0);
+        // int b = Math.max(Math.min(roundToClosestInteger(y), height-1), 0);
+        // advanced: do it in the direction of the center of the field
+        if (!(x >= 0 && x < width && y >= 0 && y < height)) {
+            UnitVector uvec = new UnitVector(width/2.0-x, height/2.0-y);
+            double alpha = 0.0;
+            if (x < 0) {
+                alpha = -x/uvec.getX();
+            } else if (x > width-1) {
+                // width-1 = x + c * uvec.getX()
+                // c = (width-1 - x) / uvec.getX()
+                alpha = (width-1-x)/uvec.getX();
+            }
+            x += alpha * uvec.getX();
+            y += alpha * uvec.getY();
+
+            if (y < 0) {
+                alpha = -y/uvec.getY();
+            } else if (y > height-1) {
+                alpha = (height-1-y)/uvec.getY();
+            }
+            x += alpha * uvec.getX();
+            y += alpha * uvec.getY();
+        }
+
+        int a = roundToClosestInteger(x);
+        int b = roundToClosestInteger(y);
+        assert(a >= 0);
+        assert(a < width);
+        assert(b >= 0);
+        assert(b < height);
+        return new Coordinate(a, b);
     }
 
     public int roundToClosestInteger(double val) {

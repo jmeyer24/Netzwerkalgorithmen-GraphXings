@@ -16,14 +16,14 @@ public class GraphXings
         ArrayList<NewPlayer> players = new ArrayList<>();
         //TODO: add players here
         players.add(new MixingPlayer("MixingPlayer1"));
-        players.add(new MixingPlayer("MixingPlayer2"));
-        players.add(new MixingPlayer("MixingPlayer3"));
-        players.add(new NewRandomPlayer("NewRandomPlayer1"));
+        // players.add(new MixingPlayer("MixingPlayer2"));
+        // players.add(new MixingPlayer("MixingPlayer3"));
+        // players.add(new NewRandomPlayer("NewRandomPlayer1"));
         players.add(new NewRandomPlayer("NewRandomPlayer2"));
 
         RandomCycleFactory factory = new RandomCycleFactory(24091869, true);
         long timeLimit = 300000000000l;
-        NewLeague l = new NewLeague(players,3,timeLimit,factory);
+        NewLeague l = new NewLeague(players,5,timeLimit,factory);
         NewLeagueResult lr = l.runLeague();
         System.out.println(lr.announceResults());
 // import GraphXings.Algorithms.NewPlayer;
