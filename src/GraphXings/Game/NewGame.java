@@ -193,7 +193,7 @@ public class NewGame {
 		GameMove lastMove = null;
 		long timeMaximizer = 0;
 		long timeMinimizer = 0;
-		long startTime = System.nanoTime();
+		// long startTime = System.nanoTime();
 		while (turn < g.getN()) {
 			GameMove newMove;
 			if (turn % 2 == 0) {

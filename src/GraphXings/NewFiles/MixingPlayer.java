@@ -86,7 +86,7 @@ public class MixingPlayer implements NewPlayer {
     private int heatMapSize = 10;
     private int nMovesSize = 20;
     private ArrayList<Vertex> lastNVertices = new ArrayList<>();
-    private boolean enemyMirroredOnce = false;
+    // private boolean enemyMirroredOnce = false;
 
     public MixingPlayer(String name) {
         this.name = name;
@@ -428,10 +428,11 @@ public class MixingPlayer implements NewPlayer {
         // If the enemy tries to counter our method by always placing our neighbours we
         // return to random playing
 
-        if (lastNVertices.size() >= 1 && enemyStealsNeighbor()) { // TODO: Add check for enemyMirroredOnce if neccessary
+        // TODO: Add check for enemyMirroredOnce if neccessary
+        if (lastNVertices.size() >= 1 && enemyStealsNeighbor()) {
             if (enemyMirrors()) {
                 openTreeEndpoints = new ArrayList<>();
-                enemyMirroredOnce = true;
+                // enemyMirroredOnce = true;
                 return treeMinimizer(lastMove, new Coordinate(width / 2, height / 2), width / 15, height / 15);
             }
             return getBruteForceMove(false, lastMove);
