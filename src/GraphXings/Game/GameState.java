@@ -10,8 +10,7 @@ import java.util.HashSet;
 /**
  * A class describing the current state of the game.
  */
-public class GameState
-{
+public class GameState {
 	/**
 	 * The set of vertices contained in the graph.
 	 */
