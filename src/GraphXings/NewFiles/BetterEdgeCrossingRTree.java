@@ -1,11 +1,17 @@
 package GraphXings.NewFiles;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.TreeSet;
+
+import com.github.davidmoten.rtree2.Entry;
+import com.github.davidmoten.rtree2.RTree;
+import com.github.davidmoten.rtree2.geometry.Geometries;
+import com.github.davidmoten.rtree2.geometry.Geometry;
+import com.github.davidmoten.rtree2.geometry.Rectangle;
 
 import GraphXings.Data.Coordinate;
 import GraphXings.Data.Edge;
@@ -13,11 +19,12 @@ import GraphXings.Data.Graph;
 import GraphXings.Data.Segment;
 import GraphXings.Data.Vertex;
 
-public class BetterEdgeCrossing {
+public class BetterEdgeCrossingRTree {
     Graph g;
     List<Vertex> vertices = new ArrayList<Vertex>();
+    RTree<Edge, Geometry> rTree = RTree.create();
 
-    public BetterEdgeCrossing(Graph g) {
+    public BetterEdgeCrossingRTree(Graph g) {
         this.g = g;
     }
 
@@ -25,35 +32,75 @@ public class BetterEdgeCrossing {
      * vertex
      * gs: the GameState does need to have inserted the vertex already!!!
      */
-    public void insertVertexByCoordinate(Vertex vertex, HashMap<Vertex, Coordinate> mapVertexToCoordinate) {
-        Comparator<Vertex> comperator = Comparator.comparingInt(vertex_ -> mapVertexToCoordinate.get(vertex_).getX());
-        int index = Collections.binarySearch(vertices, vertex, comperator);
-        if (index < 0) {
-            index *= -1;
-            index -= 1;
-        }
-        vertices.add(index, vertex);
+    public void insertAllCoodinates(HashSet<Vertex> placedVertecies) {
+        vertices = new ArrayList<Vertex>();
+        placedVertecies.forEach(vertex -> {
+            vertices.add(vertex);
+        });
+        ;
+
+    }
+
+    public void insertVertex(Vertex v) {
+        vertices.add(v);
+    }
+
+    public int testCoordinate(Vertex vertex, Coordinate coordinateToAdd,
+            HashMap<Vertex, Coordinate> mapVertexToCoordinate) {
+        mapVertexToCoordinate.put(vertex, coordinateToAdd);
+        vertices.add(vertex);
+        int crossingsAddedByVertex = calculateIntersections(mapVertexToCoordinate, vertex);
+        mapVertexToCoordinate.remove(vertex);
+        removeCoordinate(vertex);
+        return crossingsAddedByVertex;
     }
 
     public void removeCoordinate(Vertex vertex) {
         vertices.remove(vertex);
     }
 
-    /*
-     * mapVertexToCoordinates does NOT have inserted the vertex yet! That's why it
-     * is a test and not a calculation
-     */
-    public int testCoordinate(Vertex vertex, Coordinate coordinateToAdd,
-            HashMap<Vertex, Coordinate> mapVertexToCoordinate) {
-        mapVertexToCoordinate.put(vertex, coordinateToAdd);
-        insertVertexByCoordinate(vertex, mapVertexToCoordinate);
-        int crossingsAddedByVertex = calculateIntersections(mapVertexToCoordinate);
-        mapVertexToCoordinate.remove(vertex);
-        removeCoordinate(vertex);
-        return crossingsAddedByVertex;
+    public void createImg() {
+        rTree.visualize(1000, 1000).save("./images/Graph_" + ".png");
     }
 
-    public int calculateIntersections(HashMap<Vertex, Coordinate> mapVertexToCoordinate) {
+    public int calculateIntersections(HashMap<Vertex, Coordinate> mapVertexToCoordinate, Vertex v) {
+        int x1 = 0;
+        int y1 = 0;
+        int x2 = 0;
+        int y2 = 0;
+
+        // iterate over the edges adjacent to this vertex
+        for (Edge edge : g.getIncidentEdges(v)) {
+            // for the current edge get the neighbor
+            Vertex neighbor = v == edge.getS() ? edge.getT() : edge.getS();
+            // skip this neighbor if it wasn't placed yet
+            if (mapVertexToCoordinate.get(neighbor) == null) {
+                continue;
+            }
+            x1 = Integer.min(mapVertexToCoordinate.get(edge.getS()).getX(),
+                    mapVertexToCoordinate.get(edge.getT()).getX());
+            y1 = Integer.min(mapVertexToCoordinate.get(edge.getS()).getY(),
+                    mapVertexToCoordinate.get(edge.getT()).getY());
+            x2 = Integer.max(mapVertexToCoordinate.get(edge.getS()).getX(),
+                    mapVertexToCoordinate.get(edge.getT()).getX());
+            y2 = Integer.max(mapVertexToCoordinate.get(edge.getS()).getY(),
+                    mapVertexToCoordinate.get(edge.getT()).getY());
+            rTree = rTree.add(edge, Geometries.line(mapVertexToCoordinate.get(edge.getS()).getX(),
+                    mapVertexToCoordinate.get(edge.getS()).getY(), mapVertexToCoordinate.get(edge.getT()).getX(),
+                    mapVertexToCoordinate.get(edge.getT()).getY()));
+        }
+
+        Rectangle rectangle = Geometries.rectangle(x1, y1, x2, y2);
+
+        Iterable<Entry<Edge, Geometry>> search = rTree.search(rectangle);
+
+        HashSet<Vertex> searchedVertecies = new HashSet<>();
+
+        for (Entry<Edge, Geometry> entry : search) {
+            searchedVertecies.add(entry.value().getS());
+            searchedVertecies.add(entry.value().getT());
+        }
+
         int crossings = 0;
 
         // create a TreeSet where you automatically sort the added edges by the y-value
@@ -68,10 +115,7 @@ public class BetterEdgeCrossing {
         };
         TreeSet<Edge> binarySearchTree = new TreeSet<Edge>(comparator);
 
-        // for each vertex check, if creating an edge to its neighbors (if they are
-        // fixed already) would cause some crossings in the gamestate
-        // (default) the "vertices" only hold 1 vertex we might add
-        for (Vertex vertex : vertices) {
+        for (Vertex vertex : searchedVertecies) {
             // iterate over the edges adjacent to this vertex
             for (Edge edge : g.getIncidentEdges(vertex)) {
                 // for the current edge get the neighbor
@@ -148,4 +192,5 @@ public class BetterEdgeCrossing {
         // return the number of crossings with the given vertex in the current gamestate
         return crossings;
     }
+
 }

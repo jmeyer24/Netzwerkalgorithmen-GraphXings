@@ -1,5 +1,8 @@
 package GraphXings.Game;
 
+import java.io.FileWriter;
+import java.io.IOException;
+
 import GraphXings.Algorithms.NewPlayer;
 
 /**
@@ -61,6 +64,24 @@ public class NewGameResult
 		this.cheatingPlayer2 = cheatingPlayer2;
 		this.timeOutPlayer1 = timeOutPlayer1;
 		this.timeOutPlayer2 = timeOutPlayer2;
+
+		// where and whom to store
+		String path = "circleOptimization.txt";
+		String p = "MixingPlayer1";
+		// store the crossings number of our player there
+		try {
+			FileWriter myWriter = new FileWriter(path, true);
+			if (player1.getName() == p) {
+				myWriter.write("\n"+crossingsGame1);
+			}
+			else if (player2.getName() == p) {
+				myWriter.write("\n"+crossingsGame2);
+			}
+			myWriter.close();
+		} catch (IOException e) {
+			System.out.println("An error occurred.");
+			e.printStackTrace();
+		}
 	}
 
 	/**
