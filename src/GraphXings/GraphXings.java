@@ -6,6 +6,8 @@ import GraphXings.Game.GameInstance.RandomCycleFactory;
 import GraphXings.Game.League.NewLeague;
 import GraphXings.Game.League.NewLeagueResult;
 import GraphXings.NewFiles.MixingPlayer;
+import GraphXings.NewFiles.ConfigParameterOptimization;
+import GraphXings.NewFiles.MixingPlayer.Strategy;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,8 +32,21 @@ public class GraphXings {
 
         // TODO: add players here
         ArrayList<NewPlayer> players = new ArrayList<>();
-        players.add(new MixingPlayer());
-        players.add(new NewRandomPlayer("NewRandomPlayer2"));
+        ConfigParameterOptimization config = new ConfigParameterOptimization();
+        for (double relativeCircleSize : config.relativeCircleSizes) {
+            for (int sampleSize : config.sampleSizes) {
+                for (Strategy strategy : config.strategies) {
+                    if (strategy.equals(Strategy.Annealing)) {
+                        for (double percentage : config.percentages) {
+                            players.add(new MixingPlayer(percentage, relativeCircleSize, sampleSize, strategy, true));
+                        }
+                    } else {
+                        players.add(new MixingPlayer(0.0, relativeCircleSize, sampleSize, strategy, true));
+                    }
+                }
+            }
+        }
+        System.out.println(players.size());
 
         // run the league setup
         // league -> matches -> games -> minimize/maximizing

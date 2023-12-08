@@ -103,7 +103,8 @@ public class MixingPlayer implements NewPlayer {
     /**
      * optimizes the given parameters
      */
-    public MixingPlayer(double percentage, double relativeCircleSize, int sampleSize, Strategy strategy, boolean writeToFile) {
+    public MixingPlayer(double percentage, double relativeCircleSize, int sampleSize, Strategy strategy,
+            boolean writeToFile) {
         // optimizable parameters
         this.percentage = percentage;
         this.relativeCircleSize = relativeCircleSize;
@@ -111,8 +112,8 @@ public class MixingPlayer implements NewPlayer {
         this.strategy = strategy;
 
         // fixed attributes
-        this.name = "Graph_Dracula_" + percentage + "_" + relativeCircleSize + "_" + sampleSize + "_" + strategy;
-        this.r = new Random(name.hashCode());
+        this.name = "Graph_Dracula_" + strategy + percentage + "_" + relativeCircleSize + "_" + sampleSize;
+        this.r = new Random(this.name.hashCode());
         if (writeToFile) {
             writeCircleSizeToFile();
         }
@@ -506,7 +507,7 @@ public class MixingPlayer implements NewPlayer {
 
         // Create random sample set of possible placing positions of the current vertex
         // v
-        for (int sample = 0; sample < Math.ceil(sampleSize/2.0); sample++) {
+        for (int sample = 0; sample < Math.ceil(sampleSize / 2.0); sample++) {
             int x = r.nextInt(width);
             int y = r.nextInt(height);
             if (gs.getUsedCoordinates()[x][y] != 0) { // The random coordinate is already taken
