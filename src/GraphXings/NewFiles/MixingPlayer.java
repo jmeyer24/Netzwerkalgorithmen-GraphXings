@@ -88,31 +88,34 @@ public class MixingPlayer implements NewPlayer {
     private ArrayList<Vertex> lastNVertices = new ArrayList<>();
     // private boolean enemyMirroredOnce = false;
 
-    public MixingPlayer(String name) {
-        this.name = name;
+    /**
+     * Default constructor
+     */
+    public MixingPlayer() {
+        this.name = "Graph_Dracula";
         this.sampleSize = 30;
         this.percentage = 0.93;
         this.relativeCircleSize = 0.5;
         this.strategy = Strategy.Mirroring;
         this.r = new Random(name.hashCode());
-        boolean writeToFile = false;
-        if (writeToFile) {
-            writeCircleSizeToFile();
-        }
     }
 
     /**
-     * Creates a player with the assigned name.
-     * that mixes two strategies
-     * 
-     * @param name
+     * optimizes the given parameters
      */
-    public MixingPlayer(String name, int sampleSize, double percentage, Strategy strategy) {
-        this.name = name;
-        this.sampleSize = sampleSize;
+    public MixingPlayer(double percentage, double relativeCircleSize, int sampleSize, Strategy strategy, boolean writeToFile) {
+        // optimizable parameters
         this.percentage = percentage;
+        this.relativeCircleSize = relativeCircleSize;
+        this.sampleSize = sampleSize;
         this.strategy = strategy;
+
+        // fixed attributes
+        this.name = "Graph_Dracula_" + percentage + "_" + relativeCircleSize + "_" + sampleSize + "_" + strategy;
         this.r = new Random(name.hashCode());
+        if (writeToFile) {
+            writeCircleSizeToFile();
+        }
     }
 
     @Override
@@ -503,7 +506,7 @@ public class MixingPlayer implements NewPlayer {
 
         // Create random sample set of possible placing positions of the current vertex
         // v
-        for (int sample = 0; sample < sampleSize / 2; sample++) {
+        for (int sample = 0; sample < Math.ceil(sampleSize/2.0); sample++) {
             int x = r.nextInt(width);
             int y = r.nextInt(height);
             if (gs.getUsedCoordinates()[x][y] != 0) { // The random coordinate is already taken

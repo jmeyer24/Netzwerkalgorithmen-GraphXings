@@ -13,24 +13,24 @@ import java.util.ArrayList;
 
 public class GraphXings {
     public static void main(String[] args) {
-		// create a file to store the crossings number in them
+        // create a file to store the crossings number in them
         // see MixingPlayer.java, writeCycleSizeToFile()
-		String path = "circleOptimization.txt";
-		try {
-			File myObj = new File(path);
-			if (myObj.createNewFile()) {
-				System.out.println("File created: " + myObj.getName());
-			} else {
-				System.out.println("File already exists.");
-			}
-		} catch (IOException e) {
-			System.out.println("An error occurred.");
-			e.printStackTrace();
-		}
+        String path = "circleOptimization.txt";
+        try {
+            File myObj = new File(path);
+            if (myObj.createNewFile()) {
+                System.out.println("File created: " + myObj.getName());
+            } else {
+                System.out.println("File already exists.");
+            }
+        } catch (IOException e) {
+            System.out.println("An error occurred.");
+            e.printStackTrace();
+        }
 
         // TODO: add players here
         ArrayList<NewPlayer> players = new ArrayList<>();
-        players.add(new MixingPlayer("MixingPlayer1"));
+        players.add(new MixingPlayer());
         players.add(new NewRandomPlayer("NewRandomPlayer2"));
 
         // run the league setup
