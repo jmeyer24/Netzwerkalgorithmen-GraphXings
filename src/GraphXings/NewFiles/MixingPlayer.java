@@ -70,7 +70,7 @@ public class MixingPlayer implements NewPlayer {
     /**
      * The id of a vertex mapped to its vertex object
      */
-    private HashMap<String, Vertex> mapIdToVertex = new HashMap<String, Vertex>();
+    private HashMap<String, Vertex> mapIdToVertex = new HashMap<>();
     /**
      * The strategy used (see Strategy enum)
      */
@@ -82,7 +82,7 @@ public class MixingPlayer implements NewPlayer {
      */
     private double relativeCircleSize;
 
-    private ArrayList<ArrayList<Integer>> heatMap = new ArrayList<ArrayList<Integer>>();;
+    private ArrayList<ArrayList<Integer>> heatMap = new ArrayList<>();
     private int heatMapSize = 10;
     private int nMovesSize = 20;
     private ArrayList<Vertex> lastNVertices = new ArrayList<>();
@@ -209,188 +209,183 @@ public class MixingPlayer implements NewPlayer {
                 }
             }
         }
-        if (neighborsStolen > (nMovesSize / 1)) {
-            return true;
-        }
-        return false;
+        return neighborsStolen > (nMovesSize / 1);
     }
 
     public GameMove treeMinimizer(GameMove lastMove, Coordinate center, int treeWidth, int treeHeight) {
-        Vertex vertexToPlace = null;
-        GameMove newMove = null;
-        int[][] usedCoordinates = gs.getUsedCoordinates();
-        int minX = center.getX() - treeWidth / 2;
-        if (minX < 0)
-            minX = 0;
-        int maxX = center.getX() + treeWidth / 2 + treeWidth % 2;
-        if (maxX > width)
-            maxX = width;
-        int minY = center.getY() - treeHeight / 2;
-        if (minY < 0)
-            minY = 0;
-        int maxY = center.getY() + treeHeight / 2 + treeHeight % 2;
-        if (maxY > height)
-            maxY = height;
-        if (openTreeEndpoints.size() > 0) {
-            // System.out.println("lastOwnMove != null");
-            ArrayList<Vertex> unplacedNeighbors = new ArrayList<>();
-            Vertex referenceVertex = null;
-            ArrayList<Vertex> usedUpVertices = new ArrayList<>();
-            for (Vertex referenceVertex_ : openTreeEndpoints) {
-                unplacedNeighbors = getUnplacedNeighbors(referenceVertex_);
-                if (unplacedNeighbors.size() > 0) {
-                    referenceVertex = referenceVertex_;
-                    break;
-                } else {
-                    usedUpVertices.add(referenceVertex_);
+        try {
+            Vertex vertexToPlace = null;
+            GameMove newMove = null;
+            int[][] usedCoordinates = gs.getUsedCoordinates();
+            int minX = center.getX() - treeWidth / 2;
+            if (minX < 0)
+                minX = 0;
+            int maxX = center.getX() + treeWidth / 2 + treeWidth % 2;
+            if (maxX > width)
+                maxX = width;
+            int minY = center.getY() - treeHeight / 2;
+            if (minY < 0)
+                minY = 0;
+            int maxY = center.getY() + treeHeight / 2 + treeHeight % 2;
+            if (maxY > height)
+                maxY = height;
+            if (!openTreeEndpoints.isEmpty()) {
+                // System.out.println("lastOwnMove != null");
+                ArrayList<Vertex> unplacedNeighbors = new ArrayList<>();
+                Vertex referenceVertex = null;
+                ArrayList<Vertex> usedUpVertices = new ArrayList<>();
+                for (Vertex referenceVertex_ : openTreeEndpoints) {
+                    unplacedNeighbors = getUnplacedNeighbors(referenceVertex_);
+                    if (!unplacedNeighbors.isEmpty()) {
+                        referenceVertex = referenceVertex_;
+                        break;
+                    } else {
+                        usedUpVertices.add(referenceVertex_);
+                    }
+                }
+                for (Vertex vertexToRemove : usedUpVertices) {
+                    openTreeEndpoints.remove(vertexToRemove);
+                }
+                if (!unplacedNeighbors.isEmpty()) {
+                    vertexToPlace = unplacedNeighbors.get(unplacedNeighbors.size() - 1);
+                    int lastX = gs.getVertexCoordinates().get(referenceVertex).getX();
+                    int lastY = gs.getVertexCoordinates().get(referenceVertex).getY();
+                    // System.out.println(lastX + " " + lastY);
+                    switch (findClosestBoardEdge(lastX, lastY)) {
+                        case Bottom:
+                            while (true) {
+                                if (lastX > 0 && usedCoordinates[lastX - 1][lastY] == 0) {
+                                    newMove = new GameMove(vertexToPlace, new Coordinate(lastX - 1, lastY));
+                                    break;
+                                } else if (lastY > 0 && usedCoordinates[lastX][lastY - 1] == 0) {
+                                    newMove = new GameMove(vertexToPlace, new Coordinate(lastX, lastY - 1));
+                                    break;
+                                } else {
+                                    lastX--;
+                                    lastY--;
+                                    if (lastX < minX || lastY < minY)
+                                        break;
+                                }
+                            }
+                            break;
+                        case Left:
+                            while (true) {
+                                if (lastY > 0 && usedCoordinates[lastX][lastY - 1] == 0) {
+                                    newMove = new GameMove(vertexToPlace, new Coordinate(lastX, lastY - 1));
+                                    break;
+                                } else if (lastX < width - 1 && usedCoordinates[lastX + 1][lastY] == 0) {
+                                    newMove = new GameMove(vertexToPlace, new Coordinate(lastX + 1, lastY));
+                                    break;
+                                } else {
+                                    lastX++;
+                                    lastY--;
+                                    if (lastX > maxX - 1 || lastY < minY)
+                                        break;
+                                }
+                            }
+                            break;
+                        case Top:
+                            while (true) {
+                                // System.out.print(lastX + " " + lastY);
+                                if (lastX < width - 1 && usedCoordinates[lastX + 1][lastY] == 0) {
+                                    // System.out.println("if");
+                                    newMove = new GameMove(vertexToPlace, new Coordinate(lastX + 1, lastY));
+                                    break;
+                                } else if (lastY < height - 1 && usedCoordinates[lastX][lastY + 1] == 0) {
+                                    // System.out.println("elseif");
+                                    newMove = new GameMove(vertexToPlace, new Coordinate(lastX, lastY + 1));
+                                    break;
+                                } else {
+                                    // System.out.println("else");
+                                    lastX++;
+                                    lastY++;
+                                    if (lastX > maxX - 1 || lastY > maxY - 1)
+                                        break;
+                                }
+                            }
+                            break;
+                        case Right:
+                            while (true) {
+                                if (lastY < height - 1 && usedCoordinates[lastX][lastY + 1] == 0) {
+                                    newMove = new GameMove(vertexToPlace, new Coordinate(lastX, lastY + 1));
+                                    break;
+                                } else if (lastX > 0 && usedCoordinates[lastX - 1][lastY] == 0) {
+                                    newMove = new GameMove(vertexToPlace, new Coordinate(lastX - 1, lastY));
+                                    break;
+                                } else {
+                                    lastX--;
+                                    lastY++;
+                                    if (lastX < minX || lastY > maxY - 1)
+                                        break;
+                                }
+                            }
+                            break;
+                    }
                 }
             }
-            for (Vertex vertexToRemove : usedUpVertices) {
-                openTreeEndpoints.remove(vertexToRemove);
-            }
-            if (unplacedNeighbors.size() > 0) {
-                vertexToPlace = unplacedNeighbors.get(unplacedNeighbors.size() - 1);
-                int lastX = gs.getVertexCoordinates().get(referenceVertex).getX();
-                int lastY = gs.getVertexCoordinates().get(referenceVertex).getY();
-                // System.out.println(lastX + " " + lastY);
-                switch (findClosestBoardEdge(lastX, lastY)) {
-                    case Bottom:
-                        while (true) {
-                            if (lastX > 0 && usedCoordinates[lastX - 1][lastY] == 0) {
-                                newMove = new GameMove(vertexToPlace, new Coordinate(lastX - 1, lastY));
-                                break;
-                            } else if (lastY > 0 && usedCoordinates[lastX][lastY - 1] == 0) {
-                                newMove = new GameMove(vertexToPlace, new Coordinate(lastX, lastY - 1));
-                                break;
-                            } else {
-                                lastX--;
-                                lastY--;
-                                if (lastX < minX || lastY < minY)
-                                    break;
-                            }
-                        }
+            // We either have no real last move or no neighbor for our lastmove
+            if (newMove == null) {
+                // System.out.println("newMove == null");
+                int midpointID = getLargestGapMidpointID();
+                vertexToPlace = mapIdToVertex.get(Integer.toString(midpointID));
+                int circumference = treeWidth * 2 + treeHeight * 2 - 4;
+                int fieldID = midpointID % circumference; // Basically map a vertex to a distinct field vertex one
+                                                          // placed on 0, 0. Vertex two placed on 0, 1. ....
+                int dynamicTreeWidth = treeWidth;
+                int dynamicTreeHeight = treeHeight;
+                int x = 0;
+                int y = 0;
+                for (int idx = 0; idx < mapIdToVertex.size() / 10; idx++) {// TODO /10 might need some adjustment
+                    // Place on top row (ID 0-9)
+                    // Place on right column (ID 10-18)
+                    // Place on bottom row (ID 19-27)
+                    // Place on left column (ID 28-35)
+                    if (fieldID < dynamicTreeWidth) {
+                        x = fieldID + minX;
+                        y = minY;
+                    } else if (fieldID < dynamicTreeWidth + dynamicTreeHeight - 1) {
+                        x = maxX - 1;
+                        y = minY + (fieldID - dynamicTreeWidth) + 1;
+                    } else if (fieldID < dynamicTreeWidth * 2 + dynamicTreeHeight - 2) {
+                        x = maxX - 1 - (fieldID - dynamicTreeWidth - dynamicTreeHeight + 2);
+                        y = maxY - 1;
+                    } else if (fieldID < circumference) {
+                        x = minX;
+                        y = maxY - 1 - (fieldID - 2 * dynamicTreeWidth - dynamicTreeHeight + 3);
+                    } else {
                         break;
-                    case Left:
-                        while (true) {
-                            if (lastY > 0 && usedCoordinates[lastX][lastY - 1] == 0) {
-                                newMove = new GameMove(vertexToPlace, new Coordinate(lastX, lastY - 1));
-                                break;
-                            } else if (lastX < width - 1 && usedCoordinates[lastX + 1][lastY] == 0) {
-                                newMove = new GameMove(vertexToPlace, new Coordinate(lastX + 1, lastY));
-                                break;
-                            } else {
-                                lastX++;
-                                lastY--;
-                                if (lastX > maxX - 1 || lastY < minY)
-                                    break;
-                            }
-                        }
+                    }
+                    if (x > usedCoordinates.length - 1 || y > usedCoordinates[0].length - 1 || x < 0 || y < 0)
                         break;
-                    case Top:
-                        while (true) {
-                            // System.out.print(lastX + " " + lastY);
-                            if (lastX < width - 1 && usedCoordinates[lastX + 1][lastY] == 0) {
-                                // System.out.println("if");
-                                newMove = new GameMove(vertexToPlace, new Coordinate(lastX + 1, lastY));
-                                break;
-                            } else if (lastY < height - 1 && usedCoordinates[lastX][lastY + 1] == 0) {
-                                // System.out.println("elseif");
-                                newMove = new GameMove(vertexToPlace, new Coordinate(lastX, lastY + 1));
-                                break;
-                            } else {
-                                // System.out.println("else");
-                                lastX++;
-                                lastY++;
-                                if (lastX > maxX - 1 || lastY > maxY - 1)
-                                    break;
-                            }
-                        }
+                    // check if it is an unplaced position
+                    if (usedCoordinates[x][y] == 0) {
+                        newMove = new GameMove(vertexToPlace, new Coordinate(x, y));
                         break;
-                    case Right:
-                        while (true) {
-                            if (lastY < height - 1 && usedCoordinates[lastX][lastY + 1] == 0) {
-                                newMove = new GameMove(vertexToPlace, new Coordinate(lastX, lastY + 1));
-                                break;
-                            } else if (lastX > 0 && usedCoordinates[lastX - 1][lastY] == 0) {
-                                newMove = new GameMove(vertexToPlace, new Coordinate(lastX - 1, lastY));
-                                break;
-                            } else {
-                                lastX--;
-                                lastY++;
-                                if (lastX < minX || lastY > maxY - 1)
-                                    break;
-                            }
-                        }
-                        break;
+                    }
+                    fieldID++;
+                    if (fieldID >= circumference) {
+                        fieldID = 0;
+                        minX++;
+                        minY++;
+                        maxX--;
+                        maxY--;
+                        dynamicTreeHeight = dynamicTreeHeight - 2;
+                        dynamicTreeWidth = dynamicTreeWidth - 2;
+                        circumference = dynamicTreeHeight * 2 + dynamicTreeWidth * 2 - 4;
+                    }
                 }
             }
-        }
-        // We either have no real last move or no neighbor for our lastmove
-        if (newMove == null) {
-            // System.out.println("newMove == null");
-            int midpointID = getLargestGapMidpointID();
-            vertexToPlace = mapIdToVertex.get(Integer.toString(midpointID));
-            int circumference = treeWidth * 2 + treeHeight * 2 - 4;
-            int fieldID = midpointID % circumference; // Basically map a vertex to a distinct field vertex one
-                                                      // placed on 0, 0. Vertex two placed on 0, 1. ....
-            int dynamicTreeWidth = treeWidth;
-            int dynamicTreeHeight = treeHeight;
-            int x = 0;
-            int y = 0;
-            for (int idx = 0; idx < mapIdToVertex.size(); idx++) {
-                // Place on top row (ID 0-9)
-                // Place on right column (ID 10-18)
-                // Place on bottom row (ID 19-27)
-                // Place on left column (ID 28-35)
-                if (fieldID < dynamicTreeWidth) {
-                    x = fieldID + minX;
-                    y = minY;
-                } else if (fieldID < dynamicTreeWidth + dynamicTreeHeight - 1) {
-                    x = maxX - 1;
-                    y = minY + (fieldID - dynamicTreeWidth) + 1;
-                } else if (fieldID < dynamicTreeWidth * 2 + dynamicTreeHeight - 2) {
-                    x = maxX - 1 - (fieldID - dynamicTreeWidth - dynamicTreeHeight + 2);
-                    y = maxY - 1;
-                } else if (fieldID < circumference) {
-                    x = minX;
-                    y = maxY - 1 - (fieldID - 2 * dynamicTreeWidth - dynamicTreeHeight + 3);
-                } else {
-                    break;
-                }
-                if (x > usedCoordinates.length - 1 || y > usedCoordinates[0].length - 1 || x < 0 || y < 0)
-                    break;
-                // check if it is an unplaced position
-                if (usedCoordinates[x][y] == 0) {
-                    newMove = new GameMove(vertexToPlace, new Coordinate(x, y));
-                    break;
-                }
-                fieldID++;
-                if (fieldID >= circumference) {
-                    fieldID = 0;
-                    minX++;
-                    minY++;
-                    maxX--;
-                    maxY--;
-                    dynamicTreeHeight = dynamicTreeHeight - 2;
-                    dynamicTreeWidth = dynamicTreeWidth - 2;
-                    circumference = dynamicTreeHeight * 2 + dynamicTreeWidth * 2 - 4;
-                }
+            if (newMove != null && vertexToPlace != null) {
+                openTreeEndpoints.add(vertexToPlace);
+                return newMove;
             }
-            // if (newMove != null && !gs.checkMoveValidity(newMove)) {
-            // System.out.println("bad");
-            // }
-        }
-        if (newMove != null && vertexToPlace != null) {
-            // System.out.println("newMove != null");
-            // System.out.println(newMove.getCoordinate().getX() + " " +
-            // newMove.getCoordinate().getY());
-            openTreeEndpoints.add(vertexToPlace);
-            return newMove;
-        }
-        // System.out.println("getBruteForce");
+            // System.out.println("getBruteForce");
 
-        // Found no easy move, do some random stuff and try again
-        return getBruteForceMove(false, lastMove); // Found no easy move, do some random stuff and try again
+            // Found no easy move, do some random stuff and try again
+            return getBruteForceMove(false, lastMove); // Found no easy move, do some random stuff and try again
+        } catch (Exception ex) {
+            return getBruteForceMove(false, lastMove);
+        }
     }
 
     public boolean enemyMirrors() {
@@ -429,14 +424,15 @@ public class MixingPlayer implements NewPlayer {
         // return to random playing
 
         // TODO: Add check for enemyMirroredOnce if neccessary
-        if (lastNVertices.size() >= 1 && enemyStealsNeighbor()) {
-            if (enemyMirrors()) {
-                openTreeEndpoints = new ArrayList<>();
-                // enemyMirroredOnce = true;
-                return treeMinimizer(lastMove, new Coordinate(width / 2, height / 2), width / 15, height / 15);
-            }
-            return getBruteForceMove(false, lastMove);
-        }
+        // if (!lastNVertices.isEmpty() && enemyStealsNeighbor()) {
+        // if (enemyMirrors()) {
+        // openTreeEndpoints = new ArrayList<>();
+        // // enemyMirroredOnce = true;
+        // return treeMinimizer(lastMove, new Coordinate(width / 2, height / 2), width /
+        // 15, height / 15);
+        // }
+        // return getBruteForceMove(false, lastMove);
+        // }
 
         return treeMinimizer(lastMove, new Coordinate(width / 2, height / 2), width, height);
 
@@ -448,8 +444,7 @@ public class MixingPlayer implements NewPlayer {
         ArrayList<Vertex> vertices = new ArrayList<>();
         if (lastMove != null)
             vertices = getUnplacedNeighbors(lastMove.getVertex());
-        if (vertices.size() == 0) {
-
+        if (vertices.isEmpty()) {
             for (Vertex v_ : g.getVertices()) {
                 if (!gs.getPlacedVertices().contains(v_)) {
                     v = v_;
@@ -484,8 +479,8 @@ public class MixingPlayer implements NewPlayer {
         int bestSquareX = maximize ? minCol : maxCol;
         int bestSquareY = maximize ? minRow : maxRow;
 
-        ArrayList<Integer> xPositions = new ArrayList<Integer>();
-        ArrayList<Integer> yPositions = new ArrayList<Integer>();
+        ArrayList<Integer> xPositions = new ArrayList<>();
+        ArrayList<Integer> yPositions = new ArrayList<>();
 
         // Create sample set based on the lowest/highest vertex density area
         // Using abort in case of areas being completly filled, chose a reasonable(?)
@@ -563,7 +558,7 @@ public class MixingPlayer implements NewPlayer {
         ArrayList<Vertex> neighbors = getUnplacedNeighbors(lastMove.getVertex());
 
         // return another random move if all neighbors are placed already
-        if (neighbors.size() == 0) {
+        if (neighbors.isEmpty()) {
             return getRandomMove();
         }
         // get the one with the most placed neighbors
