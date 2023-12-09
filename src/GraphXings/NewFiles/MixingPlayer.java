@@ -1,7 +1,5 @@
 package GraphXings.NewFiles;
 
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -97,14 +95,13 @@ public class MixingPlayer implements NewPlayer {
         this.percentage = 0.93;
         this.relativeCircleSize = 0.5;
         this.strategy = Strategy.Mirroring;
-        this.r = new Random(name.hashCode());
+        this.r = new Random(this.name.hashCode());
     }
 
     /**
      * optimizes the given parameters
      */
-    public MixingPlayer(double percentage, double relativeCircleSize, int sampleSize, Strategy strategy,
-            boolean writeToFile) {
+    public MixingPlayer(double percentage, double relativeCircleSize, int sampleSize, Strategy strategy) {
         // optimizable parameters
         this.percentage = percentage;
         this.relativeCircleSize = relativeCircleSize;
@@ -114,9 +111,6 @@ public class MixingPlayer implements NewPlayer {
         // fixed attributes
         this.name = "Graph_Dracula_" + strategy + percentage + "_" + relativeCircleSize + "_" + sampleSize;
         this.r = new Random(this.name.hashCode());
-        if (writeToFile) {
-            writeCircleSizeToFile();
-        }
     }
 
     @Override
@@ -769,20 +763,6 @@ public class MixingPlayer implements NewPlayer {
     @Override
     public String getName() {
         return name;
-    }
-
-    private void writeCircleSizeToFile() {
-        // where and whom to store
-        String path = "circleOptimization.txt";
-        // store the crossings number of our player there
-        try {
-            FileWriter myWriter = new FileWriter(path, true);
-            myWriter.write("\n\ncircleSize: " + this.relativeCircleSize);
-            myWriter.close();
-        } catch (IOException e) {
-            System.out.println("An error occurred.");
-            e.printStackTrace();
-        }
     }
 
     /**

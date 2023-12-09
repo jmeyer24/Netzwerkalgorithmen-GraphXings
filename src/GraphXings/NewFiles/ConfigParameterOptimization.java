@@ -24,4 +24,11 @@ public class ConfigParameterOptimization {
         this.strategies.add(Strategy.Mirroring);
         this.strategies.add(Strategy.Annealing);
     }
+
+    public ConfigParameterOptimization(boolean any) {
+        this.percentages.add(0.93);
+        this.relativeCircleSizes.add(0.5);
+        this.sampleSizes.add(30);
+        this.strategies.add(Strategy.Annealing);
+    }
 }

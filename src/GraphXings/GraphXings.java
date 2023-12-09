@@ -17,7 +17,7 @@ public class GraphXings {
     public static void main(String[] args) {
         // create a file to store the crossings number in them
         // see MixingPlayer.java, writeCycleSizeToFile()
-        String path = "circleOptimization.txt";
+        String path = "Statistics/circleOptimization.txt";
         try {
             File myObj = new File(path);
             if (myObj.createNewFile()) {
@@ -33,26 +33,34 @@ public class GraphXings {
         // TODO: add players here
         ArrayList<NewPlayer> players = new ArrayList<>();
         ConfigParameterOptimization config = new ConfigParameterOptimization();
+        // this instead gives us one single MixingPlayer with standard values
+        // ConfigParameterOptimization config = new ConfigParameterOptimization(true);
         for (double relativeCircleSize : config.relativeCircleSizes) {
             for (int sampleSize : config.sampleSizes) {
                 for (Strategy strategy : config.strategies) {
-                    if (strategy.equals(Strategy.Annealing)) {
+                    if (strategy.equals(Strategy.Annealing) || strategy.equals(Strategy.AnnealingReverse)
+                            || strategy.equals(Strategy.Percentage)) {
                         for (double percentage : config.percentages) {
-                            players.add(new MixingPlayer(percentage, relativeCircleSize, sampleSize, strategy, true));
+                            players.add(new MixingPlayer(percentage, relativeCircleSize, sampleSize, strategy));
                         }
                     } else {
-                        players.add(new MixingPlayer(0.0, relativeCircleSize, sampleSize, strategy, true));
+                        players.add(new MixingPlayer(0.0, relativeCircleSize, sampleSize, strategy));
                     }
                 }
             }
         }
-        System.out.println(players.size());
+        if (players.size() < 2) {
+            players.add(new NewRandomPlayer("RandomPlayer"));
+            if (players.size() < 2) {
+                players.add(new NewRandomPlayer("RandomPlayer2"));
+            }
+        }
 
         // run the league setup
         // league -> matches -> games -> minimize/maximizing
-        RandomCycleFactory factory = new RandomCycleFactory(24091869, true);
+        RandomCycleFactory factory = new RandomCycleFactory(1392394324, true);
         long timeLimit = 300000000000l;
-        NewLeague l = new NewLeague(players, 25, timeLimit, factory);
+        NewLeague l = new NewLeague(players, 1, timeLimit, factory);
         NewLeagueResult lr = l.runLeague();
         System.out.println(lr.announceResults());
     }
