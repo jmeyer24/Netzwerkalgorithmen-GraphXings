@@ -32,7 +32,7 @@ public class GraphXings {
         // TODO: add players here
         ArrayList<NewPlayer> players = new ArrayList<>();
         players.add(new MixingPlayer("MixingPlayer1"));
-        players.add(new RTreePlayer("Grp4"));
+        players.add(new NewRandomPlayer("Random"));
 
         // run the league setup
         // league -> matches -> games -> minimize/maximizing

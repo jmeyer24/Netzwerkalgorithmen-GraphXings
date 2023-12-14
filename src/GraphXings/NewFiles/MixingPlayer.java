@@ -75,6 +75,16 @@ public class MixingPlayer implements NewPlayer {
      * The strategy used (see Strategy enum)
      */
     private Strategy strategy;
+
+    /**
+     * Check if we have a small playing field and switch strategy
+     */
+    private boolean smallFieldStrategy = false;
+
+    /**
+     * maximium playing time in nanos
+     */
+    private long playingTime = 300000000000L;
     /**
      * The size of the circle to mirror to
      * ranges from 0 (center point) over 1 (width/height of field) to sqrt(2)
@@ -90,7 +100,6 @@ public class MixingPlayer implements NewPlayer {
 
     public MixingPlayer(String name) {
         this.name = name;
-        this.sampleSize = 30;
         this.percentage = 0.93;
         this.relativeCircleSize = 0.5;
         this.strategy = Strategy.Mirroring;
@@ -156,6 +165,9 @@ public class MixingPlayer implements NewPlayer {
         if (maximize) {
             // double progress = (double) gs.getPlacedVertices().size() / g.getN();
             // System.out.print(progress);
+            if (smallFieldStrategy) {
+                return getBruteForceMove(maximize, lastMove);
+            }
             switch (strategy) {
                 case BruteForce:
                     return getBruteForceMove(maximize, lastMove);
@@ -183,6 +195,8 @@ public class MixingPlayer implements NewPlayer {
                     return getRandomMove();
             }
         } else {
+            if (smallFieldStrategy)
+                return getBruteForceMove(maximize, lastMove);
             return getMinimizingMove(lastMove);
         }
     }
@@ -439,6 +453,7 @@ public class MixingPlayer implements NewPlayer {
     }
 
     public GameMove getBruteForceMove(boolean maximize, GameMove lastMove) {
+        long startTime = System.nanoTime();
         // get the first vertex that is not yet placed
         Vertex v = null;
         ArrayList<Vertex> vertices = new ArrayList<>();
@@ -498,7 +513,8 @@ public class MixingPlayer implements NewPlayer {
 
         // Create random sample set of possible placing positions of the current vertex
         // v
-        for (int sample = 0; sample < sampleSize / 2; sample++) {
+        int verticesToAdd = sampleSize - xPositions.size();
+        for (int sample = 0; sample < verticesToAdd; sample++) {
             int x = r.nextInt(width);
             int y = r.nextInt(height);
             if (gs.getUsedCoordinates()[x][y] != 0) { // The random coordinate is already taken
@@ -512,8 +528,14 @@ public class MixingPlayer implements NewPlayer {
         // Number of crossings before we place the vertex
         int bestTotalCrossingsByVertex = maximize ? Integer.MIN_VALUE : Integer.MAX_VALUE;
         int bestSample = 0;
-        // Find best position (maximizing crossings) we can place vertex v at
+        // Find best position (maximizing/minimize crossings) we can place vertex v at
         for (int sample = 0; sample < sampleSize; sample++) {
+            // System.out.println(sample);
+            // Adding 10% to make sure we do not run out of time
+            if (1.1 * (System.nanoTime() - startTime) > playingTime / mapIdToVertex.size()) {
+                // System.out.println("checked " + sample + " samples");
+                break;
+            }
             if (gs.getUsedCoordinates()[xPositions.get(sample)][yPositions.get(sample)] != 0)
                 continue;
             Coordinate coordinateToAdd = new Coordinate(xPositions.get(sample), yPositions.get(sample));
@@ -754,6 +776,13 @@ public class MixingPlayer implements NewPlayer {
 
         for (Vertex vertex : g.getVertices()) {
             this.mapIdToVertex.put(vertex.getId(), vertex);
+        }
+        if (width * height < 5000) {
+            this.smallFieldStrategy = true;
+            this.sampleSize = this.mapIdToVertex.size();
+        } else {
+            this.smallFieldStrategy = false;
+            this.sampleSize = 500;
         }
     }
 
