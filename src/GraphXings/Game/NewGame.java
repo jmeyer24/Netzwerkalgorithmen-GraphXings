@@ -114,8 +114,6 @@ public class NewGame {
 			graphPanel.changeReadyState(false);
 		}
 		try {
-			player1.initializeNextRound(g.copy(), width, height, NewPlayer.Role.MAX);
-			player2.initializeNextRound(g.copy(), width, height, NewPlayer.Role.MIN);
 			int crossingsGame1 = playRound(player1, player2);
 			// Between Games
 			if (showGui) {
@@ -131,9 +129,6 @@ public class NewGame {
 				}
 				graphPanel.changeReadyState(false);
 			}
-
-			player1.initializeNextRound(g.copy(), width, height, NewPlayer.Role.MIN);
-			player2.initializeNextRound(g.copy(), width, height, NewPlayer.Role.MAX);
 			int crossingsGame2 = playRound(player2, player1);
 			return new NewGameResult(crossingsGame1, crossingsGame2, player1, player2, false, false, false, false);
 		} catch (NewInvalidMoveException ex) {
@@ -174,7 +169,18 @@ public class NewGame {
 		GameMove lastMove = null;
 		long timeMaximizer = 0;
 		long timeMinimizer = 0;
-		// long startTime = System.nanoTime();
+		long initStartTimeMax = System.nanoTime();
+		maximizer.initializeNextRound(g.copy(), width, height, NewPlayer.Role.MAX);
+		timeMaximizer += System.nanoTime() - initStartTimeMax;
+		if (timeMaximizer > timeLimit) {
+			throw new NewTimeOutException(maximizer);
+		}
+		long initStartTimeMin = System.nanoTime();
+		minimizer.initializeNextRound(g.copy(), width, height, NewPlayer.Role.MIN);
+		timeMinimizer += System.nanoTime() - initStartTimeMin;
+		if (timeMinimizer > timeLimit) {
+			throw new NewTimeOutException(minimizer);
+		}
 		while (turn < g.getN()) {
 			GameMove newMove;
 			if (turn % 2 == 0) {
