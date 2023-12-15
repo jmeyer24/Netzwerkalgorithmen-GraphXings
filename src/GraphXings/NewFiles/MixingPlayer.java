@@ -349,7 +349,7 @@ public class MixingPlayer implements NewPlayer {
                 int dynamicTreeHeight = treeHeight;
                 int x = 0;
                 int y = 0;
-                for (int idx = 0; idx < mapIdToVertex.size() / 10; idx++) {// TODO /10 might need some adjustment
+                for (int idx = 0; idx < g.getN() / 10; idx++) {// TODO /10 might need some adjustment
                     // Place on top row (ID 0-9)
                     // Place on right column (ID 10-18)
                     // Place on bottom row (ID 19-27)
@@ -532,12 +532,10 @@ public class MixingPlayer implements NewPlayer {
         for (int sample = 0; sample < sampleSize; sample++) {
             // System.out.println(sample);
             // Adding 10% to make sure we do not run out of time
-            if (1.1 * (System.nanoTime() - startTime) > playingTime / mapIdToVertex.size()) {
+            if (1.1 * (System.nanoTime() - startTime) > playingTime / (g.getN() / 2)) {
                 // System.out.println("checked " + sample + " samples");
                 break;
             }
-            if (gs.getUsedCoordinates()[xPositions.get(sample)][yPositions.get(sample)] != 0)
-                continue;
             Coordinate coordinateToAdd = new Coordinate(xPositions.get(sample), yPositions.get(sample));
             int crossingsAddedByVertex = betterEdgeCrossingRTree.testCoordinate(v, coordinateToAdd,
                     gs.getVertexCoordinates());
@@ -777,9 +775,9 @@ public class MixingPlayer implements NewPlayer {
         for (Vertex vertex : g.getVertices()) {
             this.mapIdToVertex.put(vertex.getId(), vertex);
         }
-        if (width * height < 5000) {
+        if (width * height < 10000) {
             this.smallFieldStrategy = true;
-            this.sampleSize = this.mapIdToVertex.size();
+            this.sampleSize = this.g.getN();
         } else {
             this.smallFieldStrategy = false;
             this.sampleSize = 500;
