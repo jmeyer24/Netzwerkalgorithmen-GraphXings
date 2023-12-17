@@ -339,12 +339,14 @@ public class MixingPlayer implements NewPlayer {
             }
             // We either have no real last move or no neighbor for our lastmove
             if (newMove == null) {
-                // System.out.println("newMove == null");
-                int midpointID = getLargestGapMidpointID();
-                vertexToPlace = mapIdToVertex.get(Integer.toString(midpointID));
+                for (Vertex vertex : g.getVertices()) {
+                    if (!gs.getPlacedVertices().contains(vertex)) {
+                        vertexToPlace = vertex;
+                        break; // There should always be a valid vertex here
+                    }
+                }
                 int circumference = treeWidth * 2 + treeHeight * 2 - 4;
-                int fieldID = midpointID % circumference; // Basically map a vertex to a distinct field vertex one
-                                                          // placed on 0, 0. Vertex two placed on 0, 1. ....
+                int fieldID = r.nextInt(circumference);
                 int dynamicTreeWidth = treeWidth;
                 int dynamicTreeHeight = treeHeight;
                 int x = 0;
@@ -393,7 +395,6 @@ public class MixingPlayer implements NewPlayer {
                 openTreeEndpoints.add(vertexToPlace);
                 return newMove;
             }
-            // System.out.println("getBruteForce");
 
             // Found no easy move, do some random stuff and try again
             return getBruteForceMove(false, lastMove); // Found no easy move, do some random stuff and try again
@@ -671,46 +672,6 @@ public class MixingPlayer implements NewPlayer {
             }
         }
         return neighbors;
-    }
-
-    public int getLargestGapMidpointID() {
-        if (gs.getPlacedVertices().isEmpty()) {
-            return g.getN() / 2;
-        }
-
-        // Convert the IDs to a list of integers and sort it
-        List<Integer> ids = gs.getPlacedVertices().stream().map(vertex -> Integer.parseInt(vertex.getId())).sorted()
-                .collect(Collectors.toList());
-
-        // Initialize variables to track the largest gap and its midpoint
-        int largestGap = 0;
-        int largestGapMidpoint = 0;
-
-        // Check the gap between each pair of consecutive IDs
-        for (int i = 0; i < ids.size() - 1; i++) {
-            int gap = ids.get(i + 1) - ids.get(i);
-            if (gap > largestGap) {
-                // System.out.println("gap " + gap + " with " + (i + 1) + " and id " + ids.get(i
-                // + 1) + " and " + i
-                // + " and id " + ids.get(i));
-                largestGap = gap;
-                largestGapMidpoint = ids.get(i) + gap / 2;
-            }
-        }
-
-        // Check the gap between the last and first ID
-        int finalGap = g.getN() + 1 - ids.get(ids.size() - 1);
-        if (finalGap > largestGap) {
-            // System.out.println("second");
-            // System.out.println("gap " + finalGap + " with id 1 and " + (ids.size() - 1)
-            // + " and id " + ids.get(ids.size() - 1));
-            // System.out.println(ids);
-            // System.out.println(ids.size());
-            largestGapMidpoint = (ids.get(ids.size() - 1) + finalGap / 2) % g.getN();
-        }
-        // System.out.println(largestGapMidpoint);
-
-        return largestGapMidpoint;
     }
 
     public Coordinate getCoordinateClampedToPlayingField(double x, double y) {
