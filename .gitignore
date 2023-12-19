@@ -1,5 +1,8 @@
 .vscode/
 *.class
+*.swp
+
 src/GraphXings/otherCode/
 src/GraphXings/NewFiles/otherGroups
-.swp
+src/GraphXings/Gruppe5Algo/
+src/GraphXings/Gruppe8/

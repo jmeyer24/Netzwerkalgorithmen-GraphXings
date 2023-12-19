@@ -2,7 +2,7 @@ package GraphXings;
 
 import GraphXings.Algorithms.NewPlayer;
 import GraphXings.Algorithms.NewRandomPlayer;
-import GraphXings.Game.GameInstance.RandomCycleFactory;
+import GraphXings.Game.GameInstance.PlanarGameInstanceFactory;
 import GraphXings.Game.League.NewLeague;
 import GraphXings.Game.League.NewLeagueResult;
 import GraphXings.NewFiles.MixingPlayer;
@@ -58,9 +58,10 @@ public class GraphXings {
 
         // run the league setup
         // league -> matches -> games -> minimize/maximizing
-        RandomCycleFactory factory = new RandomCycleFactory(1392394324, true);
+        // RandomCycleFactory factory = new RandomCycleFactory(102060351, true);
+        PlanarGameInstanceFactory factory2 = new PlanarGameInstanceFactory(102060352);
         long timeLimit = 300000000000l;
-        NewLeague l = new NewLeague(players, 1, timeLimit, factory);
+        NewLeague l = new NewLeague(players, 5, timeLimit, factory2);
         NewLeagueResult lr = l.runLeague();
         System.out.println(lr.announceResults());
     }
