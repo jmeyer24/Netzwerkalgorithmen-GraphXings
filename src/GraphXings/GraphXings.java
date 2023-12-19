@@ -41,14 +41,15 @@ public class GraphXings {
                     if (strategy.equals(Strategy.Mirroring)) {
                         players.add(new MixingPlayer(0.0, relativeCircleSize, sampleSize, 0, strategy));
                     } else {
-                        for (int vertexNumber : config.vertexNumbers) {
+                        for (int vertexSampleSize : config.vertexSampleSizes) {
                             if (strategy.equals(Strategy.BruteForce)) {
                                 players.add(
-                                        new MixingPlayer(0.0, relativeCircleSize, sampleSize, vertexNumber, strategy));
+                                        new MixingPlayer(0.0, relativeCircleSize, sampleSize, vertexSampleSize,
+                                                strategy));
                             } else {
                                 for (double percentage : config.percentages) {
                                     players.add(new MixingPlayer(percentage, relativeCircleSize, sampleSize,
-                                            vertexNumber, strategy));
+                                            vertexSampleSize, strategy));
                                 }
                             }
                         }

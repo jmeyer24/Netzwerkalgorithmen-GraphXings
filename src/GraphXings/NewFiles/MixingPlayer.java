@@ -94,7 +94,6 @@ public class MixingPlayer implements NewPlayer {
      * (diagonal of field)
      */
     private double relativeCircleSize;
-    private int vertexNumber;
 
     private ArrayList<ArrayList<Integer>> heatMap = new ArrayList<>();
     private int heatMapSize = 10;
@@ -108,7 +107,7 @@ public class MixingPlayer implements NewPlayer {
     public MixingPlayer() {
         this.name = "Graph_Dracula";
         this.sampleSize = 30;
-        this.vertexNumber = 1;
+        this.vertexSampleSize = 1;
         this.percentage = 0.93;
         this.relativeCircleSize = 0.5;
         this.strategy = Strategy.Mirroring;
@@ -118,18 +117,18 @@ public class MixingPlayer implements NewPlayer {
     /**
      * optimizes the given parameters
      */
-    public MixingPlayer(double percentage, double relativeCircleSize, int sampleSize, int vertexNumber,
+    public MixingPlayer(double percentage, double relativeCircleSize, int sampleSize, int vertexSampleSize,
             Strategy strategy) {
         // optimizable parameters
         this.percentage = percentage;
         this.relativeCircleSize = relativeCircleSize;
         this.sampleSize = sampleSize;
-        this.vertexNumber = vertexNumber;
+        this.vertexSampleSize = vertexSampleSize;
         this.strategy = strategy;
 
         // fixed attributes
         this.name = "Graph_Dracula_" + strategy + "_" + percentage + "_" + relativeCircleSize + "_" + sampleSize + "_"
-                + vertexNumber;
+                + vertexSampleSize;
         this.r = new Random(this.name.hashCode());
     }
 
@@ -482,7 +481,7 @@ public class MixingPlayer implements NewPlayer {
 
         // get random vertex samples and v in a list
         List<Vertex> trimmedVertices = new ArrayList<>();
-        if(vertexSampleSize > 1) {
+        if (vertexSampleSize > 1) {
             List<Vertex> allVertices = new ArrayList<>();
             for (Vertex vertex : g.getVertices()) {
                 if (!gs.getPlacedVertices().contains(vertex)) {
@@ -490,10 +489,10 @@ public class MixingPlayer implements NewPlayer {
                 }
             }
             Collections.shuffle(allVertices);
-            trimmedVertices = new ArrayList<>(allVertices.subList(0, Math.min(allVertices.size(), vertexSampleSize-1)));
+            trimmedVertices = new ArrayList<>(
+                    allVertices.subList(0, Math.min(allVertices.size(), vertexSampleSize - 1)));
             trimmedVertices.add(v);
-        }    
-
+        }
 
         // Find optimal heatmap square
         int minVal = Integer.MAX_VALUE;
@@ -554,8 +553,9 @@ public class MixingPlayer implements NewPlayer {
         // Number of crossings before we place the vertex
         int bestTotalCrossingsByVertex = maximize ? Integer.MIN_VALUE : Integer.MAX_VALUE;
         VertexSamplePair bestPair = null;
-        
-        // Find the best position (maximizing/minimizing crossings) we can place vertex v at
+
+        // Find the best position (maximizing/minimizing crossings) we can place vertex
+        // v at
         for (int sample = 0; sample < sampleSize; sample++) {
             // System.out.println(sample);
             // Adding 10% to make sure we do not run out of time
@@ -563,15 +563,15 @@ public class MixingPlayer implements NewPlayer {
                 // System.out.println("checked " + sample + " samples");
                 break;
             }
-        
+
             List<Vertex> verticesToSample = (vertexSampleSize == 1) ? Collections.singletonList(v) : trimmedVertices;
-        
+
             for (Vertex vertexToSample : verticesToSample) {
                 // Add vertex sampling here
                 Coordinate coordinateToAdd = new Coordinate(xPositions.get(sample), yPositions.get(sample));
                 int crossingsAddedByVertex = betterEdgeCrossingRTree.testCoordinate(vertexToSample, coordinateToAdd,
                         gs.getVertexCoordinates());
-                    //??????? Error wenn mehr als ein Vertex abgefragt wird. 
+                // ??????? Error wenn mehr als ein Vertex abgefragt wird.
                 if (maximize ? crossingsAddedByVertex > bestTotalCrossingsByVertex
                         : crossingsAddedByVertex < bestTotalCrossingsByVertex) {
                     bestPair = new VertexSamplePair(vertexToSample, sample);
@@ -579,9 +579,9 @@ public class MixingPlayer implements NewPlayer {
                 }
             }
         }
-        
 
-        Coordinate coordinateToAdd = new Coordinate(xPositions.get(bestPair.getSample()), yPositions.get(bestPair.getSample()));
+        Coordinate coordinateToAdd = new Coordinate(xPositions.get(bestPair.getSample()),
+                yPositions.get(bestPair.getSample()));
         HashMap<Vertex, Coordinate> mapVertexToCoordinate = gs.getVertexCoordinates();
         mapVertexToCoordinate.put(bestPair.vertex, coordinateToAdd);
         betterEdgeCrossingRTree.insertAllCoodinates(gs.getPlacedVertices());

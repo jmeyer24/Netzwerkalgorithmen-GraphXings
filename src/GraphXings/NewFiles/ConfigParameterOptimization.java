@@ -8,7 +8,7 @@ public class ConfigParameterOptimization {
     public List<Double> percentages = new ArrayList<>();
     public List<Double> relativeCircleSizes = new ArrayList<>();
     public List<Integer> sampleSizes = new ArrayList<>();
-    public List<Integer> vertexNumbers = new ArrayList<>();
+    public List<Integer> vertexSampleSizes = new ArrayList<>();
     public List<MixingPlayer.Strategy> strategies = new ArrayList<>();
 
     public ConfigParameterOptimization() {
@@ -22,7 +22,7 @@ public class ConfigParameterOptimization {
             this.sampleSizes.add(i);
         }
         for (int i = 1; i <= 3; i += 1) {
-            this.vertexNumbers.add(i);
+            this.vertexSampleSizes.add(i);
         }
         // this.strategies.add(Strategy.BruteForce);
         this.strategies.add(Strategy.Mirroring);
@@ -33,7 +33,7 @@ public class ConfigParameterOptimization {
         this.percentages.add(0.93);
         this.relativeCircleSizes.add(0.5);
         this.sampleSizes.add(30);
-        this.vertexNumbers.add(1);
+        this.vertexSampleSizes.add(1);
         this.strategies.add(Strategy.Annealing);
     }
 }
