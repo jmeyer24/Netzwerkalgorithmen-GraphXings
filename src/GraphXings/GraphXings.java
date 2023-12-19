@@ -38,13 +38,20 @@ public class GraphXings {
         for (double relativeCircleSize : config.relativeCircleSizes) {
             for (int sampleSize : config.sampleSizes) {
                 for (Strategy strategy : config.strategies) {
-                    if (strategy.equals(Strategy.Annealing) || strategy.equals(Strategy.AnnealingReverse)
-                            || strategy.equals(Strategy.Percentage)) {
-                        for (double percentage : config.percentages) {
-                            players.add(new MixingPlayer(percentage, relativeCircleSize, sampleSize, strategy));
-                        }
+                    if (strategy.equals(Strategy.Mirroring)) {
+                        players.add(new MixingPlayer(0.0, relativeCircleSize, sampleSize, 0, strategy));
                     } else {
-                        players.add(new MixingPlayer(0.0, relativeCircleSize, sampleSize, strategy));
+                        for (int vertexNumber : config.vertexNumbers) {
+                            if (strategy.equals(Strategy.BruteForce)) {
+                                players.add(
+                                        new MixingPlayer(0.0, relativeCircleSize, sampleSize, vertexNumber, strategy));
+                            } else {
+                                for (double percentage : config.percentages) {
+                                    players.add(new MixingPlayer(percentage, relativeCircleSize, sampleSize,
+                                            vertexNumber, strategy));
+                                }
+                            }
+                        }
                     }
                 }
             }

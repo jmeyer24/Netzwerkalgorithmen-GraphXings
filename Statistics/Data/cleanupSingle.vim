@@ -23,7 +23,12 @@ silent! g/and/norm jmikddGp'i
 silent! g/-1/norm jmikddGp'i
 
 # add .csv header
-norm ggOstra,perc,circ,samp,stra2,perc2,circ2,samp2,cros1,cros2
+var signs = len(split(getline('.'), ',', 1)) - 1
+if signs == 9
+    norm ggOstra,perc,circ,samp,stra2,perc2,circ2,samp2,cros1,cros2
+elseif signs == 11
+    norm ggOstra,perc,circ,samp,vert,stra2,perc2,circ2,samp2,vert2,cros1,cros2
+endif
 
 # save and undo current file
 w! %:r.csv

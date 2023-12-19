@@ -89,6 +89,7 @@ public class MixingPlayer implements NewPlayer {
      * (diagonal of field)
      */
     private double relativeCircleSize;
+    private int vertexNumber;
 
     private ArrayList<ArrayList<Integer>> heatMap = new ArrayList<>();
     private int heatMapSize = 10;
@@ -102,6 +103,7 @@ public class MixingPlayer implements NewPlayer {
     public MixingPlayer() {
         this.name = "Graph_Dracula";
         this.sampleSize = 30;
+        this.vertexNumber = 1;
         this.percentage = 0.93;
         this.relativeCircleSize = 0.5;
         this.strategy = Strategy.Mirroring;
@@ -111,15 +113,18 @@ public class MixingPlayer implements NewPlayer {
     /**
      * optimizes the given parameters
      */
-    public MixingPlayer(double percentage, double relativeCircleSize, int sampleSize, Strategy strategy) {
+    public MixingPlayer(double percentage, double relativeCircleSize, int sampleSize, int vertexNumber,
+            Strategy strategy) {
         // optimizable parameters
         this.percentage = percentage;
         this.relativeCircleSize = relativeCircleSize;
         this.sampleSize = sampleSize;
+        this.vertexNumber = vertexNumber;
         this.strategy = strategy;
 
         // fixed attributes
-        this.name = "Graph_Dracula_" + strategy + "_" + percentage + "_" + relativeCircleSize + "_" + sampleSize;
+        this.name = "Graph_Dracula_" + strategy + "_" + percentage + "_" + relativeCircleSize + "_" + sampleSize + "_"
+                + vertexNumber;
         this.r = new Random(this.name.hashCode());
     }
 
