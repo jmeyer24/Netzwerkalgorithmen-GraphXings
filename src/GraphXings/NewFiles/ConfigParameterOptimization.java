@@ -33,7 +33,7 @@ public class ConfigParameterOptimization {
         this.percentages.add(0.93);
         this.relativeCircleSizes.add(0.5);
         this.sampleSizes.add(30);
-        this.vertexSampleSizes.add(1);
+        this.vertexSampleSizes.add(3);
         this.strategies.add(Strategy.Annealing);
     }
 }

@@ -97,6 +97,9 @@ public class BetterEdgeCrossingRTree {
         HashSet<Vertex> searchedVertecies = new HashSet<>();
 
         for (Entry<Edge, Geometry> entry : search) {
+            if (mapVertexToCoordinate.get(entry.value().getS()) == null
+                    || mapVertexToCoordinate.get(entry.value().getT()) == null)
+                continue;
             searchedVertecies.add(entry.value().getS());
             searchedVertecies.add(entry.value().getT());
         }
