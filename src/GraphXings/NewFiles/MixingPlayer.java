@@ -3,6 +3,7 @@ package GraphXings.NewFiles;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -50,6 +51,10 @@ public class MixingPlayer implements NewPlayer {
      * The sample size of the brute force method
      */
     private int sampleSize;
+    /*
+     * The sample size of the vertecies
+     */
+    private int vertexSampleSize;
     /**
      * The percentage value with which to choose brute force over the mirror tactic
      */
@@ -467,8 +472,23 @@ public class MixingPlayer implements NewPlayer {
                 }
             }
         } else {
-            v = vertices.get(0);
+            v = findMostNeighborsVertex(vertices, maximize);
         }
+
+        // get random vertex samples and v in a list
+        List<Vertex> trimmedVertices = new ArrayList<>();
+        if(vertexSampleSize > 1) {
+            List<Vertex> allVertices = new ArrayList<>();
+            for (Vertex vertex : g.getVertices()) {
+                if (!gs.getPlacedVertices().contains(vertex)) {
+                    allVertices.add(vertex);
+                }
+            }
+            Collections.shuffle(allVertices);
+            trimmedVertices = new ArrayList<>(allVertices.subList(0, Math.min(allVertices.size(), vertexSampleSize-1)));
+            trimmedVertices.add(v);
+        }    
+
 
         // Find optimal heatmap square
         int minVal = Integer.MAX_VALUE;
@@ -526,9 +546,11 @@ public class MixingPlayer implements NewPlayer {
         }
 
         // Number of crossings before we place the vertex
+        // Number of crossings before we place the vertex
         int bestTotalCrossingsByVertex = maximize ? Integer.MIN_VALUE : Integer.MAX_VALUE;
-        int bestSample = 0;
-        // Find best position (maximizing/minimize crossings) we can place vertex v at
+        VertexSamplePair bestPair = null;
+        
+        // Find the best position (maximizing/minimizing crossings) we can place vertex v at
         for (int sample = 0; sample < sampleSize; sample++) {
             // System.out.println(sample);
             // Adding 10% to make sure we do not run out of time
@@ -536,19 +558,27 @@ public class MixingPlayer implements NewPlayer {
                 // System.out.println("checked " + sample + " samples");
                 break;
             }
-            Coordinate coordinateToAdd = new Coordinate(xPositions.get(sample), yPositions.get(sample));
-            int crossingsAddedByVertex = betterEdgeCrossingRTree.testCoordinate(v, coordinateToAdd,
-                    gs.getVertexCoordinates());
-            if (maximize ? crossingsAddedByVertex > bestTotalCrossingsByVertex
-                    : crossingsAddedByVertex < bestTotalCrossingsByVertex) {
-                bestSample = sample;
-                bestTotalCrossingsByVertex = crossingsAddedByVertex;
+        
+            List<Vertex> verticesToSample = (vertexSampleSize == 1) ? Collections.singletonList(v) : trimmedVertices;
+        
+            for (Vertex vertexToSample : verticesToSample) {
+                // Add vertex sampling here
+                Coordinate coordinateToAdd = new Coordinate(xPositions.get(sample), yPositions.get(sample));
+                int crossingsAddedByVertex = betterEdgeCrossingRTree.testCoordinate(vertexToSample, coordinateToAdd,
+                        gs.getVertexCoordinates());
+                    //??????? Error wenn mehr als ein Vertex abgefragt wird. 
+                if (maximize ? crossingsAddedByVertex > bestTotalCrossingsByVertex
+                        : crossingsAddedByVertex < bestTotalCrossingsByVertex) {
+                    bestPair = new VertexSamplePair(vertexToSample, sample);
+                    bestTotalCrossingsByVertex = crossingsAddedByVertex;
+                }
             }
         }
+        
 
-        Coordinate coordinateToAdd = new Coordinate(xPositions.get(bestSample), yPositions.get(bestSample));
+        Coordinate coordinateToAdd = new Coordinate(xPositions.get(bestPair.getSample()), yPositions.get(bestPair.getSample()));
         HashMap<Vertex, Coordinate> mapVertexToCoordinate = gs.getVertexCoordinates();
-        mapVertexToCoordinate.put(v, coordinateToAdd);
+        mapVertexToCoordinate.put(bestPair.vertex, coordinateToAdd);
         betterEdgeCrossingRTree.insertAllCoodinates(gs.getPlacedVertices());
 
         return new GameMove(v, coordinateToAdd);
@@ -716,6 +746,28 @@ public class MixingPlayer implements NewPlayer {
         return (int) Math.floor(val);
     }
 
+    public Vertex findMostNeighborsVertex(List<Vertex> vertices, boolean maximize) {
+        Vertex mostNeighboursVertex = vertices.get(0);
+
+        for (Vertex vertex : vertices) {
+            List<Vertex> unplacedNeighbors = getUnplacedNeighbors(vertex);
+
+            if (maximize) {
+                // For maximize, find the vertex with the least unplaced neighbors
+                if (unplacedNeighbors.size() < getUnplacedNeighbors(mostNeighboursVertex).size()) {
+                    mostNeighboursVertex = vertex;
+                }
+            } else {
+                // For !maximize, find the vertex with the most unplaced neighbors
+                if (unplacedNeighbors.size() > getUnplacedNeighbors(mostNeighboursVertex).size()) {
+                    mostNeighboursVertex = vertex;
+                }
+            }
+        }
+
+        return mostNeighboursVertex;
+    }
+
     @Override
     public void initializeNextRound(Graph g, int width, int height, Role role) {
         this.g = g;
@@ -738,9 +790,11 @@ public class MixingPlayer implements NewPlayer {
         if (width * height < 10000) {
             this.smallFieldStrategy = true;
             this.sampleSize = this.g.getN();
+            this.vertexSampleSize = 3;
         } else {
             this.smallFieldStrategy = false;
             this.sampleSize = 500;
+            this.vertexSampleSize = 1;
         }
     }
 
