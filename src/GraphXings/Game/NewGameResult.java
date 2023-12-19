@@ -8,8 +8,7 @@ import GraphXings.Algorithms.NewPlayer;
 /**
  * A class for describing the result of a GraphXings game!
  */
-public class NewGameResult
-{
+public class NewGameResult {
 	/**
 	 * The number of crossings in the first round.
 	 */
@@ -45,17 +44,20 @@ public class NewGameResult
 
 	/**
 	 * Constructs a GameResult object for storing the results of a GraphXings game!
-	 * @param crossingsGame1 The number of crossings in the first round.
-	 * @param crossingsGame2 The number of crossings in the second round.
-	 * @param player1 The first player that maximized the number of crossings in the first round.
-	 * @param player2 The second player that maximized the number of crossings in the second round.
+	 * 
+	 * @param crossingsGame1  The number of crossings in the first round.
+	 * @param crossingsGame2  The number of crossings in the second round.
+	 * @param player1         The first player that maximized the number of
+	 *                        crossings in the first round.
+	 * @param player2         The second player that maximized the number of
+	 *                        crossings in the second round.
 	 * @param cheatingPlayer1 True, if player 1 cheated, false otherwise.
 	 * @param cheatingPlayer2 True, if player 2 cheated, false otherwise.
-	 * @param timeOutPlayer1 True, if player 1 ran out of time, false otherwise.
-	 * @param timeOutPlayer2 True, if player 1 ran out of time, false otherwise.
+	 * @param timeOutPlayer1  True, if player 1 ran out of time, false otherwise.
+	 * @param timeOutPlayer2  True, if player 1 ran out of time, false otherwise.
 	 */
-	public NewGameResult(int crossingsGame1, int crossingsGame2, NewPlayer player1, NewPlayer player2, boolean cheatingPlayer1, boolean cheatingPlayer2, boolean timeOutPlayer1, boolean timeOutPlayer2)
-	{
+	public NewGameResult(int crossingsGame1, int crossingsGame2, NewPlayer player1, NewPlayer player2,
+			boolean cheatingPlayer1, boolean cheatingPlayer2, boolean timeOutPlayer1, boolean timeOutPlayer2) {
 		this.crossingsGame1 = crossingsGame1;
 		this.crossingsGame2 = crossingsGame2;
 		this.player1 = player1;
@@ -66,17 +68,11 @@ public class NewGameResult
 		this.timeOutPlayer2 = timeOutPlayer2;
 
 		// where and whom to store
-		String path = "circleOptimization.txt";
-		String p = "MixingPlayer1";
+		String path = "Statistics/circleOptimization.txt";
 		// store the crossings number of our player there
 		try {
 			FileWriter myWriter = new FileWriter(path, true);
-			if (player1.getName() == p) {
-				myWriter.write("\n"+crossingsGame1);
-			}
-			else if (player2.getName() == p) {
-				myWriter.write("\n"+crossingsGame2);
-			}
+			myWriter.write(announceResult() + "\n");
 			myWriter.close();
 		} catch (IOException e) {
 			System.out.println("An error occurred.");
@@ -86,80 +82,65 @@ public class NewGameResult
 
 	/**
 	 * Gets the winning player.
+	 * 
 	 * @return The winning player.
 	 */
-	public NewPlayer getWinner()
-	{
-		if (timeOutPlayer1)
-		{
+	public NewPlayer getWinner() {
+		if (timeOutPlayer1) {
 			return player2;
 		}
-		if (timeOutPlayer2)
-		{
+		if (timeOutPlayer2) {
 			return player1;
 		}
-		if (cheatingPlayer1)
-		{
+		if (cheatingPlayer1) {
 			return player2;
 		}
-		if (cheatingPlayer2)
-		{
+		if (cheatingPlayer2) {
 			return player1;
 		}
-		if (crossingsGame1 == crossingsGame2)
-		{
+		if (crossingsGame1 == crossingsGame2) {
 			return null;
 		}
 		NewPlayer winner;
-		if (crossingsGame1 > crossingsGame2)
-		{
+		if (crossingsGame1 > crossingsGame2) {
 			winner = player1;
-		}
-		else
-		{
+		} else {
 			winner = player2;
 		}
 		return winner;
 	}
+
 	/**
 	 * Creates a string that announces the result!
+	 * 
 	 * @return A string announcing the result of the GraphXings game!
 	 */
-	public String announceResult()
-	{
-		if (timeOutPlayer1)
-		{
-			return(player1.getName() + " ran out of time. " + player2.getName() + " wins!");
+	public String announceResult() {
+		if (timeOutPlayer1) {
+			return (player1.getName() + " ran out of time. " + player2.getName() + " wins!");
 		}
-		if (timeOutPlayer2)
-		{
-			return(player2.getName() + " ran out of time. " + player1.getName() + " wins!");
+		if (timeOutPlayer2) {
+			return (player2.getName() + " ran out of time. " + player1.getName() + " wins!");
 		}
-		if (cheatingPlayer1)
-		{
-			return(player1.getName() + " attempted an invalid move. " + player2.getName() + " wins!");
+		if (cheatingPlayer1) {
+			return (player1.getName() + " attempted an invalid move. " + player2.getName() + " wins!");
 		}
-		if (cheatingPlayer2)
-		{
-			return(player2.getName() + " attempted an invalid move. " + player1.getName() + " wins!");
+		if (cheatingPlayer2) {
+			return (player2.getName() + " attempted an invalid move. " + player1.getName() + " wins!");
 		}
 		NewPlayer winner = getWinner();
-		if (winner == null)
-		{
-			return ("It's a tie between " + player1.getName() + " and " + player2.getName() + " with " + crossingsGame1 + " crossings!");
-		}
-		else
-		{
+		if (winner == null) {
+			return ("It's a tie between " + player1.getName() + " and " + player2.getName() + " with " + crossingsGame1
+					+ " crossings!");
+		} else {
 			NewPlayer looser;
-			if (winner.equals(player1))
-			{
+			if (winner.equals(player1)) {
 				looser = player2;
-			}
-			else
-			{
+			} else {
 				looser = player1;
 			}
-			return (winner.getName() + " beats " + looser.getName() + " with " + crossingsGame1 + ":" + crossingsGame2 + " crossings!");
+			return (winner.getName() + " beats " + looser.getName() + " with " + crossingsGame1 + ":" + crossingsGame2
+					+ " crossings!");
 		}
 	}
 }
