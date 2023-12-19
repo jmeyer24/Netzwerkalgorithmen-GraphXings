@@ -17,7 +17,7 @@ public class GraphXings {
     public static void main(String[] args) {
         // create a file to store the crossings number in them
         // see MixingPlayer.java, writeCycleSizeToFile()
-        String path = "Statistics/circleOptimization.txt";
+        String path = "Statistics/optimization.txt";
         try {
             File myObj = new File(path);
             if (myObj.createNewFile()) {
