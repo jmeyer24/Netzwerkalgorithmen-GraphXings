@@ -119,7 +119,7 @@ public class MixingPlayer implements NewPlayer {
         this.strategy = strategy;
 
         // fixed attributes
-        this.name = "Graph_Dracula_" + strategy + percentage + "_" + relativeCircleSize + "_" + sampleSize;
+        this.name = "Graph_Dracula_" + strategy + "_" + percentage + "_" + relativeCircleSize + "_" + sampleSize;
         this.r = new Random(this.name.hashCode());
     }
 

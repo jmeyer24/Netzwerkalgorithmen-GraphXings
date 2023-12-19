@@ -11,13 +11,13 @@ public class ConfigParameterOptimization {
     public List<MixingPlayer.Strategy> strategies = new ArrayList<>();
 
     public ConfigParameterOptimization() {
-        for (double i = 0.85; i <= 0.95; i += 0.05) {
+        for (double i = 0.85; i <= 0.95 + 0.01; i += 0.05) {
             this.percentages.add(i);
         }
-        for (double i = 0.4; i <= 0.6; i += 0.025) {
+        for (double i = 0.45; i <= 0.55 + 0.01; i += 0.025) {
             this.relativeCircleSizes.add(i);
         }
-        for (int i = (int) 20.0; i <= 40; i += 5) {
+        for (int i = 25; i <= 35; i += 5) {
             this.sampleSizes.add(i);
         }
         // this.strategies.add(Strategy.BruteForce);

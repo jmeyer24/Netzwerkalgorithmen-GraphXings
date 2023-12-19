@@ -9,10 +9,10 @@ import java.util.Random;
 /**
  * A factory creating two examples of planar graphs.
  */
-public class PlanarExampleInstanceFactory implements GameInstanceFactory
-{
+public class PlanarExampleInstanceFactory implements GameInstanceFactory {
 	/**
-	 * True if the next game instance contains the first example graph, false otherwise.
+	 * True if the next game instance contains the first example graph, false
+	 * otherwise.
 	 */
 	private boolean firstExample;
 	/**
@@ -23,35 +23,31 @@ public class PlanarExampleInstanceFactory implements GameInstanceFactory
 	/**
 	 * Standard constructor.
 	 */
-	public PlanarExampleInstanceFactory()
-	{
+	public PlanarExampleInstanceFactory() {
 		firstExample = true;
 		r = new Random();
 	}
+
 	@Override
-	public GameInstance getGameInstance()
-	{
+	public GameInstance getGameInstance() {
 		Graph g;
-		if (firstExample)
-		{
+		if (firstExample) {
 			g = getG1();
-		}
-		else
-		{
+		} else {
 			g = getG2();
 		}
 		firstExample = !firstExample;
-		int width = r.nextInt(150)+10;
-		int height = r.nextInt(150)+10;
-		return new GameInstance(g,width,height);
+		int width = r.nextInt(150) + 10;
+		int height = r.nextInt(150) + 10;
+		return new GameInstance(g, width, height);
 	}
 
 	/**
 	 * Creates the first example graph.
+	 * 
 	 * @return The first example graph.
 	 */
-	private Graph getG1()
-	{
+	private Graph getG1() {
 		Graph g = new Graph();
 		Vertex v1 = new Vertex("1");
 		Vertex v2 = new Vertex("2");
@@ -73,30 +69,30 @@ public class PlanarExampleInstanceFactory implements GameInstanceFactory
 		g.addVertex(v8);
 		g.addVertex(v9);
 		g.addVertex(v10);
-		g.addEdge(new Edge(v1,v2));
-		g.addEdge(new Edge(v2,v3));
-		g.addEdge(new Edge(v3,v4));
-		g.addEdge(new Edge(v4,v5));
-		g.addEdge(new Edge(v5,v6));
-		g.addEdge(new Edge(v6,v7));
-		g.addEdge(new Edge(v7,v8));
-		g.addEdge(new Edge(v8,v9));
-		g.addEdge(new Edge(v9,v10));
-		g.addEdge(new Edge(v10,v1));
-		g.addEdge(new Edge(v1,v9));
-		g.addEdge(new Edge(v2,v6));
-		g.addEdge(new Edge(v3,v5));
-		g.addEdge(new Edge(v4,v7));
-		g.addEdge(new Edge(v8,v10));
+		g.addEdge(new Edge(v1, v2));
+		g.addEdge(new Edge(v2, v3));
+		g.addEdge(new Edge(v3, v4));
+		g.addEdge(new Edge(v4, v5));
+		g.addEdge(new Edge(v5, v6));
+		g.addEdge(new Edge(v6, v7));
+		g.addEdge(new Edge(v7, v8));
+		g.addEdge(new Edge(v8, v9));
+		g.addEdge(new Edge(v9, v10));
+		g.addEdge(new Edge(v10, v1));
+		g.addEdge(new Edge(v1, v9));
+		g.addEdge(new Edge(v2, v6));
+		g.addEdge(new Edge(v3, v5));
+		g.addEdge(new Edge(v4, v7));
+		g.addEdge(new Edge(v8, v10));
 		return g;
 	}
 
 	/**
 	 * Creates the second example graph.
+	 * 
 	 * @return The second example graph.
 	 */
-	private Graph getG2()
-	{
+	private Graph getG2() {
 		Graph g = new Graph();
 		Vertex v1 = new Vertex("1");
 		Vertex v2 = new Vertex("2");
@@ -118,30 +114,30 @@ public class PlanarExampleInstanceFactory implements GameInstanceFactory
 		g.addVertex(v8);
 		g.addVertex(v9);
 		g.addVertex(v10);
-		g.addEdge(new Edge(v1,v2));
-		g.addEdge(new Edge(v2,v3));
-		g.addEdge(new Edge(v3,v4));
-		g.addEdge(new Edge(v4,v5));
-		g.addEdge(new Edge(v5,v6));
-		g.addEdge(new Edge(v6,v7));
-		g.addEdge(new Edge(v7,v8));
-		g.addEdge(new Edge(v8,v9));
-		g.addEdge(new Edge(v9,v10));
-		g.addEdge(new Edge(v1,v3));
-		g.addEdge(new Edge(v3,v5));
-		g.addEdge(new Edge(v5,v7));
-		g.addEdge(new Edge(v7,v9));
-		g.addEdge(new Edge(v2,v4));
-		g.addEdge(new Edge(v4,v6));
-		g.addEdge(new Edge(v6,v8));
-		g.addEdge(new Edge(v8,v10));
-		g.addEdge(new Edge(v1,v4));
-		g.addEdge(new Edge(v1,v5));
-		g.addEdge(new Edge(v1,v6));
-		g.addEdge(new Edge(v1,v7));
-		g.addEdge(new Edge(v1,v8));
-		g.addEdge(new Edge(v1,v9));
-		g.addEdge(new Edge(v1,v10));
+		g.addEdge(new Edge(v1, v2));
+		g.addEdge(new Edge(v2, v3));
+		g.addEdge(new Edge(v3, v4));
+		g.addEdge(new Edge(v4, v5));
+		g.addEdge(new Edge(v5, v6));
+		g.addEdge(new Edge(v6, v7));
+		g.addEdge(new Edge(v7, v8));
+		g.addEdge(new Edge(v8, v9));
+		g.addEdge(new Edge(v9, v10));
+		g.addEdge(new Edge(v1, v3));
+		g.addEdge(new Edge(v3, v5));
+		g.addEdge(new Edge(v5, v7));
+		g.addEdge(new Edge(v7, v9));
+		g.addEdge(new Edge(v2, v4));
+		g.addEdge(new Edge(v4, v6));
+		g.addEdge(new Edge(v6, v8));
+		g.addEdge(new Edge(v8, v10));
+		g.addEdge(new Edge(v1, v4));
+		g.addEdge(new Edge(v1, v5));
+		g.addEdge(new Edge(v1, v6));
+		g.addEdge(new Edge(v1, v7));
+		g.addEdge(new Edge(v1, v8));
+		g.addEdge(new Edge(v1, v9));
+		g.addEdge(new Edge(v1, v10));
 		return g;
 	}
 }

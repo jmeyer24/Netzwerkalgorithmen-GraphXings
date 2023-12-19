@@ -38,15 +38,14 @@ public class GameState {
 
 	/**
 	 * Creates a new GameState object describing the initial empty game board.
-	 * @param g The graph to be drawn.
-	 * @param width The width of the game board.
+	 * 
+	 * @param g      The graph to be drawn.
+	 * @param width  The width of the game board.
 	 * @param height The height of the game board.
 	 */
-	public GameState(Graph g, int width, int height)
-	{
+	public GameState(Graph g, int width, int height) {
 		vertices = new HashSet<>();
-		for (Vertex v : g.getVertices())
-		{
+		for (Vertex v : g.getVertices()) {
 			vertices.add(v);
 		}
 		vertexCoordinates = new HashMap<>();
@@ -67,14 +66,11 @@ public class GameState {
 	 * @param newMove The potential move to be performed.
 	 * @return True if the move is valid, false if it is invalid.
 	 */
-	public boolean checkMoveValidity(GameMove newMove)
-	{
-		if (newMove.getVertex() == null ||newMove.getCoordinate() == null)
-		{
+	public boolean checkMoveValidity(GameMove newMove) {
+		if (newMove.getVertex() == null || newMove.getCoordinate() == null) {
 			return false;
 		}
-		if (!vertices.contains(newMove.getVertex()))
-		{
+		if (!vertices.contains(newMove.getVertex())) {
 			return false;
 		}
 		if (placedVertices.contains(newMove.getVertex())) {

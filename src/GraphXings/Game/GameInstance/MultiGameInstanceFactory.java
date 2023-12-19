@@ -1,14 +1,13 @@
 package GraphXings.Game.GameInstance;
 
-
 import java.util.ArrayList;
 import java.util.Random;
 
 /**
- * A factory that randomly selects amongst a selection of GameInstanceFactories to create a new GameInstance.
+ * A factory that randomly selects amongst a selection of GameInstanceFactories
+ * to create a new GameInstance.
  */
-public class MultiGameInstanceFactory implements GameInstanceFactory
-{
+public class MultiGameInstanceFactory implements GameInstanceFactory {
 	/**
 	 * A list of GameInstanceFactories.
 	 */
@@ -19,18 +18,18 @@ public class MultiGameInstanceFactory implements GameInstanceFactory
 	Random r;
 
 	@Override
-	public GameInstance getGameInstance()
-	{
+	public GameInstance getGameInstance() {
 		return factories.get(r.nextInt(factories.size())).getGameInstance();
 	}
 
 	/**
 	 * Creates a new MultiGameInstanceFactory
-	 * @param factory The first factory to be included, must be passed so to avoid NullPointerExceptions.
-	 * @param seed The seed for the random number generator.
+	 * 
+	 * @param factory The first factory to be included, must be passed so to avoid
+	 *                NullPointerExceptions.
+	 * @param seed    The seed for the random number generator.
 	 */
-	public MultiGameInstanceFactory(GameInstanceFactory factory, long seed)
-	{
+	public MultiGameInstanceFactory(GameInstanceFactory factory, long seed) {
 		factories = new ArrayList<>();
 		factories.add(factory);
 		r = new Random(seed);
@@ -38,10 +37,10 @@ public class MultiGameInstanceFactory implements GameInstanceFactory
 
 	/**
 	 * Adds another GameInstanceFactory to the list of eligible factories.
+	 * 
 	 * @param factory The new GameInstanceFactory.
 	 */
-	public void addFactory(GameInstanceFactory factory)
-	{
+	public void addFactory(GameInstanceFactory factory) {
 		factories.add(factory);
 	}
 }

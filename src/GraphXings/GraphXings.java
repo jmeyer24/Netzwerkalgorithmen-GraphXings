@@ -17,7 +17,7 @@ public class GraphXings {
     public static void main(String[] args) {
         // create a file to store the crossings number in them
         // see MixingPlayer.java, writeCycleSizeToFile()
-        String path = "Statistics/optimization.txt";
+        String path = "Statistics/Data/optimization.txt";
         try {
             File myObj = new File(path);
             if (myObj.createNewFile()) {
@@ -61,7 +61,7 @@ public class GraphXings {
         // RandomCycleFactory factory = new RandomCycleFactory(102060351, true);
         PlanarGameInstanceFactory factory2 = new PlanarGameInstanceFactory(102060352);
         long timeLimit = 300000000000l;
-        NewLeague l = new NewLeague(players, 5, timeLimit, factory2);
+        NewLeague l = new NewLeague(players, 1, timeLimit, factory2);
         NewLeagueResult lr = l.runLeague();
         System.out.println(lr.announceResults());
     }

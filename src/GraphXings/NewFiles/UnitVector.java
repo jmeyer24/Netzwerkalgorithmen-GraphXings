@@ -7,7 +7,7 @@ public class UnitVector {
     private double length;
 
     public UnitVector(double x, double y) {
-        this. length = Math.sqrt(x*x + y*y);
+        this.length = Math.sqrt(x * x + y * y);
         this.x = x / this.length;
         this.y = y / this.length;
     }

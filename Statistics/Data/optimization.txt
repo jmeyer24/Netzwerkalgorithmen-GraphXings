@@ -1,0 +1,17 @@
+Graph_Dracula_Annealing_0.85_0.45_25 beats Graph_Dracula_Mirroring_0.0_0.45_25 with 3145:2509 crossings!
+Graph_Dracula_Annealing_0.9_0.45_25 beats Graph_Dracula_Mirroring_0.0_0.45_25 with 4501:4137 crossings!
+Graph_Dracula_Annealing_0.9_0.45_25 beats Graph_Dracula_Annealing_0.85_0.45_25 with 112:109 crossings!
+Graph_Dracula_Annealing_0.9500000000000001_0.45_25 beats Graph_Dracula_Mirroring_0.0_0.45_25 with 499739:467222 crossings!
+Graph_Dracula_Annealing_0.9500000000000001_0.45_25 beats Graph_Dracula_Annealing_0.85_0.45_25 with 447823:436085 crossings!
+Graph_Dracula_Annealing_0.9_0.45_25 beats Graph_Dracula_Annealing_0.9500000000000001_0.45_25 with 2554:2762 crossings!
+Graph_Dracula_Mirroring_0.0_0.45_25 beats Graph_Dracula_Mirroring_0.0_0.45_30 with 591661:580389 crossings!
+Graph_Dracula_Mirroring_0.0_0.45_30 beats Graph_Dracula_Annealing_0.85_0.45_25 with 623187:676146 crossings!
+Graph_Dracula_Annealing_0.9_0.45_25 beats Graph_Dracula_Mirroring_0.0_0.45_30 with 251685:247944 crossings!
+Graph_Dracula_Annealing_0.9500000000000001_0.45_25 beats Graph_Dracula_Mirroring_0.0_0.45_30 with 905300:1321325 crossings!
+Graph_Dracula_Annealing_0.85_0.45_30 beats Graph_Dracula_Mirroring_0.0_0.45_25 with 56064:57269 crossings!
+Graph_Dracula_Annealing_0.85_0.45_25 beats Graph_Dracula_Annealing_0.85_0.45_30 with 150385:146726 crossings!
+Graph_Dracula_Annealing_0.9_0.45_25 beats Graph_Dracula_Annealing_0.85_0.45_30 with 1226617:918621 crossings!
+Graph_Dracula_Annealing_0.9500000000000001_0.45_25 beats Graph_Dracula_Annealing_0.85_0.45_30 with 849809:852959 crossings!
+Graph_Dracula_Annealing_0.85_0.45_30 beats Graph_Dracula_Mirroring_0.0_0.45_30 with 355:340 crossings!
+Graph_Dracula_Mirroring_0.0_0.45_25 beats Graph_Dracula_Annealing_0.9_0.45_30 with 6329:6781 crossings!
+Graph_Dracula_Annealing_0.9_0.45_30 beats Graph_Dracula_Annealing_0.85_0.45_25 with 995:1028 crossings!

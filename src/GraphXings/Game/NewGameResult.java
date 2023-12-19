@@ -68,7 +68,7 @@ public class NewGameResult {
 		this.timeOutPlayer2 = timeOutPlayer2;
 
 		// where and whom to store
-		String path = "Statistics/circleOptimization.txt";
+		String path = "Statistics/Data/optimization.txt";
 		// store the crossings number of our player there
 		try {
 			FileWriter myWriter = new FileWriter(path, true);
