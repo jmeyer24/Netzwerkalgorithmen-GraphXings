@@ -3,12 +3,11 @@ package GraphXings.NewFiles;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-import java.util.Iterator;
+
+import com.github.davidmoten.rtree2.Iterables;
 
 import GraphXings.Algorithms.NewPlayer;
 import GraphXings.Game.GameMove;
@@ -19,6 +18,7 @@ import GraphXings.Data.*;
  * A player performing random moves.
  */
 public class MixingPlayer implements NewPlayer {
+    /* ---------------- attributes -------------- */
     /**
      * The name of the Good palyer
      */
@@ -36,11 +36,11 @@ public class MixingPlayer implements NewPlayer {
      */
     private GameState gs;
     /**
-     * The width of the game board.
+     * The this.width of the game board.
      */
     private int width;
     /**
-     * The height of the game board.
+     * The this.height of the game board.
      */
     private int height;
     /**
@@ -58,7 +58,8 @@ public class MixingPlayer implements NewPlayer {
     /**
      * The percentage value with which to choose brute force over the mirror tactic
      */
-    // TODO: the larger the field and number of vertices, the higher the percentage
+    // TODO: the larger the board and number of vertices, the higher the percentage
+    // TODO: description with strategies and percentages
     // for mirroring game (e.g. annealing)
     // TODO: make it so that this is calculated: percentage =
     // duration(BruteForceMove) / duration(MirroringMove)
@@ -69,7 +70,6 @@ public class MixingPlayer implements NewPlayer {
      * can add an edge
      */
     private ArrayList<Vertex> openTreeEndpoints = new ArrayList<>();
-
     /**
      * The id of a vertex mapped to its vertex object
      */
@@ -78,31 +78,30 @@ public class MixingPlayer implements NewPlayer {
      * The strategy used (see Strategy enum)
      */
     private Strategy strategy;
-
     /**
-     * Check if we have a small playing field and switch strategy
+     * Check if we have a small game board and switch strategy
      */
-    private boolean smallFieldStrategy = false;
-
+    private boolean smallBoardStrategy;
     /**
      * maximium playing time in nanos
      */
     private long playingTime = 300000000000L;
     /**
      * The size of the circle to mirror to
-     * ranges from 0 (center point) over 1 (width/height of field) to sqrt(2)
-     * (diagonal of field)
+     * ranges from 0 (center point) over 1 (this.width/this.height of game board) to
+     * sqrt(2)
+     * (diagonal of board)
      */
     private double relativeCircleSize;
-
-    private ArrayList<ArrayList<Integer>> heatMap = new ArrayList<>();
+    private ArrayList<ArrayList<Integer>> heatmap = new ArrayList<>();
     private int heatMapSize = 10;
-    private int nMovesSize = 20;
-    private ArrayList<Vertex> lastNVertices = new ArrayList<>();
+    private int nMoveSize = 20;
+    private ArrayList<Vertex> vertexHistory = new ArrayList<>();
     // private boolean enemyMirroredOnce = false;
 
+    /* ---------------- constructor -------------- */
     /**
-     * Default constructor
+     * The default constructor for {@code MixingPlayer}
      */
     public MixingPlayer() {
         this.name = "Graph_Dracula";
@@ -115,7 +114,22 @@ public class MixingPlayer implements NewPlayer {
     }
 
     /**
-     * optimizes the given parameters
+     * Constructs a {@code MixingPlayer} with the specified initial attribute
+     * values. A name is chosen from these attributes. The Random object uses this
+     * name hashed as seed.
+     *
+     * @param percentage         for specific strategies this gives the percentage
+     *                           value (see class description)
+     * @param relativeCircleSize gives the radius of the mirroring circle relative
+     *                           to the this.width and this.height of the game
+     *                           board, along the x- and y-axes respectively
+     * @param sampleSize         the number of vertices we want to sample per
+     *                           BruteForce player game move
+     * @param vertexSampleSize   TODO: explain this
+     * @param strategy           the strategy we choose for the player. This is
+     *                           normally a combination/interpolation of mirroring
+     *                           over the game board center and the brute force
+     *                           method
      */
     public MixingPlayer(double percentage, double relativeCircleSize, int sampleSize, int vertexSampleSize,
             Strategy strategy) {
@@ -132,6 +146,7 @@ public class MixingPlayer implements NewPlayer {
         this.r = new Random(this.name.hashCode());
     }
 
+    /* -------- overrides of NewPlayer methods -------- */
     @Override
     public GameMove maximizeCrossings(GameMove lastMove) {
         return makeMove(lastMove, true);
@@ -142,60 +157,142 @@ public class MixingPlayer implements NewPlayer {
         return makeMove(lastMove, false);
     }
 
-    public void addToHeatmap(Coordinate coordinate) {
-        int heatMapX = (int) ((double) coordinate.getX() / width * heatMapSize);
-        int heatMapY = (int) ((double) coordinate.getY() / height * heatMapSize);
-        heatMap.get(heatMapX).set(heatMapY, heatMap.get(heatMapX).get(heatMapY) + 1);
+    @Override
+    public void initializeNextRound(Graph g, int width, int height, Role role) {
+        this.g = g;
+        this.width = width;
+        this.height = height;
+        if (this.height < this.heatMapSize || this.width < this.heatMapSize) {
+            this.heatMapSize = 1;
+        }
+        this.gs = new GameState(g, this.width, this.height);
+        this.betterEdgeCrossingRTree = new BetterEdgeCrossingRTree(g);
+        this.heatmap = new ArrayList<ArrayList<Integer>>();
+        this.vertexHistory = new ArrayList<>();
+        for (int i = 0; i < heatMapSize; i++) {
+            this.heatmap.add(new ArrayList<Integer>(Collections.nCopies(heatMapSize, 0)));
+        }
+
+        for (Vertex vertex : g.getVertices()) {
+            this.mapIdToVertex.put(vertex.getId(), vertex);
+        }
+        if (this.width * this.height < 10000) {
+            this.smallBoardStrategy = true;
+            this.sampleSize = g.getN();
+            this.vertexSampleSize = 3;
+        } else {
+            this.smallBoardStrategy = false;
+            this.sampleSize = 500;
+            this.vertexSampleSize = 1;
+        }
     }
 
+    @Override
+    public String getName() {
+        return this.name;
+    }
+
+    /* ---------------- public methods -------------- */
+    /**
+     * Return a valid game move. For that, apply the last game move by the opponent,
+     * get a valid game move and finally apply that as well.
+     * 
+     * @param lastMove the last move made by the opponent, {@code null} if it is the
+     *                 first move of the game
+     * @param maximize boolean containing information about the player's objective
+     *                 (minimizing or maximizing)
+     * @return a valid game move
+     * @apiNote Applying a game move incorporates adding it to the local game state
+     *          of the player as well as its decision structures (heatmap, fifo).
+     */
     public GameMove makeMove(GameMove lastMove, boolean maximize) {
         // First: Apply the last move by the opponent to the local GameState (and the
         // Crossing Calculator)
         if (lastMove != null) {
             gs.applyMove(lastMove);
-            addToHeatmap(lastMove.getCoordinate());
-            updateFiFo(lastMove);
-            betterEdgeCrossingRTree.insertVertex(lastMove.getVertex());
+            updateHeatmap(lastMove);
+            updateVertexHistory(lastMove);
+            this.betterEdgeCrossingRTree.insertVertex(lastMove.getVertex());
         }
-        // Second: Compute the new move.
+
+        // Second: Compute the new move
         GameMove newMove = getMove(lastMove, maximize);
+
         // Third: Apply the new move to the local GameState (and the Crossing
         // Calculator)
         gs.applyMove(newMove);
-        betterEdgeCrossingRTree.insertVertex(newMove.getVertex());
-        addToHeatmap(newMove.getCoordinate());
-        updateFiFo(newMove);
-        // Finally: Return the new move.
+        updateHeatmap(newMove);
+        updateVertexHistory(newMove);
+        this.betterEdgeCrossingRTree.insertVertex(newMove.getVertex());
+
+        // Finally: Return the new move
         return newMove;
     }
 
+    /**
+     * Maintain the history of recent move vertices {@code this.vertexHistory} with
+     * a maximal history size of {@code this.nMoveSize}
+     * 
+     * @param vertex the vertex to store in the queue
+     */
+    private void updateVertexHistory(GameMove move) {
+        if (this.vertexHistory.size() >= this.nMoveSize) {
+            this.vertexHistory.remove(0);
+        }
+        this.vertexHistory.add(move.getVertex());
+    }
+
+    /**
+     * Add the (float) coordinate of the move to the (integer) heatmap by
+     * incrementing at the respective index
+     * 
+     * @param move the move with the coordinate to increment the heatmap at
+     */
+    public void updateHeatmap(GameMove move) {
+        int heatMapX = (int) ((double) move.getCoordinate().getX() / this.width * heatMapSize);
+        int heatMapY = (int) ((double) move.getCoordinate().getY() / this.height * heatMapSize);
+        this.heatmap.get(heatMapX).set(heatMapY, this.heatmap.get(heatMapX).get(heatMapY) + 1);
+    }
+
+    /**
+     * Return a valid game move in the current game state.
+     * See the {@code enum Strategies} for the list of maximizing strategies.
+     * Minimizing is currently done by a single strategy, see
+     * {@code getMinimizingMove()}.
+     * 
+     * @param lastMove the last move made by the opponent, {@code null} if it is the
+     *                 first move of the game
+     * @param maximize boolean containing information about the player's objective
+     *                 (minimizing or maximizing)
+     * @return a valid game move aiding the player objective
+     */
     public GameMove getMove(GameMove lastMove, boolean maximize) {
+        // if we have a small game board, just use the brute force method
+        if (this.smallBoardStrategy) {
+            return getBruteForceMove(lastMove, maximize);
+        }
+        // else get a move according to the current strategy
         if (maximize) {
-            // double progress = (double) gs.getPlacedVertices().size() / g.getN();
-            // System.out.print(progress);
-            if (smallFieldStrategy) {
-                return getBruteForceMove(maximize, lastMove);
-            }
             switch (strategy) {
                 case BruteForce:
-                    return getBruteForceMove(maximize, lastMove);
+                    return getBruteForceMove(lastMove, maximize);
                 case Mirroring:
                     return getMirroringMove(lastMove);
                 case Percentage:
-                    if (r.nextDouble() < percentage) {
-                        return getBruteForceMove(maximize, lastMove);
+                    if (this.r.nextDouble() < percentage) {
+                        return getBruteForceMove(lastMove, maximize);
                     } else {
                         return getMirroringMove(lastMove);
                     }
                 case Annealing:
-                    if ((double) gs.getPlacedVertices().size() / g.getN() < percentage) {
+                    if ((double) gs.getPlacedVertices().size() / this.g.getN() < percentage) {
                         return getMirroringMove(lastMove);
                     } else {
-                        return getBruteForceMove(maximize, lastMove);
+                        return getBruteForceMove(lastMove, maximize);
                     }
                 case AnnealingReverse:
-                    if ((double) gs.getPlacedVertices().size() / g.getN() < percentage) {
-                        return getBruteForceMove(maximize, lastMove);
+                    if ((double) gs.getPlacedVertices().size() / this.g.getN() < percentage) {
+                        return getBruteForceMove(lastMove, maximize);
                     } else {
                         return getMirroringMove(lastMove);
                     }
@@ -203,287 +300,332 @@ public class MixingPlayer implements NewPlayer {
                     return getRandomMove();
             }
         } else {
-            if (smallFieldStrategy)
-                return getBruteForceMove(maximize, lastMove);
             return getMinimizingMove(lastMove);
         }
     }
 
-    private void updateFiFo(GameMove moveToAdd) {
-        if (lastNVertices.size() >= nMovesSize) {
-            lastNVertices.remove(0);
-        }
-        lastNVertices.add(moveToAdd.getVertex());
-    }
-
-    private Boolean enemyStealsNeighbor() {
-        int neighborsStolen = 0;
-        for (Vertex vertex : lastNVertices) {
-            if (g.getIncidentEdges(vertex) == null) {
-                continue;
-            }
-            Iterator<Edge> edges = g.getIncidentEdges(vertex).iterator();
-            while (edges.hasNext()) {
-                Edge edge = edges.next();
-                Vertex vertexToCheck = edge.getS() != vertex ? edge.getS() : edge.getT();
-                if (lastNVertices.contains(vertexToCheck)) {
-                    neighborsStolen++;
+    /**
+     * Computes a random valid move, e.g. an unplaced vertex at a free coordinate.
+     * 
+     * @return a random valid move
+     */
+    private GameMove getRandomMove() {
+        int stillToBePlaced = this.g.getN() - gs.getPlacedVertices().size();
+        int next = this.r.nextInt(stillToBePlaced);
+        int skipped = 0;
+        Vertex v = null;
+        for (Vertex u : this.g.getVertices()) {
+            if (!gs.getPlacedVertices().contains(u)) {
+                if (skipped < next) {
+                    skipped++;
+                    continue;
                 }
+                v = u;
+                break;
             }
         }
-        return neighborsStolen > (nMovesSize / 1);
+        Coordinate c;
+        do {
+            c = new Coordinate(this.r.nextInt(this.width), this.r.nextInt(this.height));
+        } while (gs.getUsedCoordinates()[c.getX()][c.getY()] != 0);
+        return new GameMove(v, c);
     }
 
-    public GameMove treeMinimizer(GameMove lastMove, Coordinate center, int treeWidth, int treeHeight) {
-        try {
-            Vertex vertexToPlace = null;
-            GameMove newMove = null;
-            int[][] usedCoordinates = gs.getUsedCoordinates();
-            int minX = center.getX() - treeWidth / 2;
-            if (minX < 0)
-                minX = 0;
-            int maxX = center.getX() + treeWidth / 2 + treeWidth % 2;
-            if (maxX > width)
-                maxX = width;
-            int minY = center.getY() - treeHeight / 2;
-            if (minY < 0)
-                minY = 0;
-            int maxY = center.getY() + treeHeight / 2 + treeHeight % 2;
-            if (maxY > height)
-                maxY = height;
-            if (!openTreeEndpoints.isEmpty()) {
-                // System.out.println("lastOwnMove != null");
-                ArrayList<Vertex> unplacedNeighbors = new ArrayList<>();
-                Vertex referenceVertex = null;
-                ArrayList<Vertex> usedUpVertices = new ArrayList<>();
-                for (Vertex referenceVertex_ : openTreeEndpoints) {
-                    unplacedNeighbors = getUnplacedNeighbors(referenceVertex_);
-                    if (!unplacedNeighbors.isEmpty()) {
-                        referenceVertex = referenceVertex_;
-                        break;
-                    } else {
-                        usedUpVertices.add(referenceVertex_);
-                    }
-                }
-                for (Vertex vertexToRemove : usedUpVertices) {
-                    openTreeEndpoints.remove(vertexToRemove);
-                }
-                if (!unplacedNeighbors.isEmpty()) {
-                    vertexToPlace = unplacedNeighbors.get(unplacedNeighbors.size() - 1);
-                    int lastX = gs.getVertexCoordinates().get(referenceVertex).getX();
-                    int lastY = gs.getVertexCoordinates().get(referenceVertex).getY();
-                    // System.out.println(lastX + " " + lastY);
-                    switch (findClosestBoardEdge(lastX, lastY)) {
-                        case Bottom:
-                            while (true) {
-                                if (lastX > 0 && usedCoordinates[lastX - 1][lastY] == 0) {
-                                    newMove = new GameMove(vertexToPlace, new Coordinate(lastX - 1, lastY));
-                                    break;
-                                } else if (lastY > 0 && usedCoordinates[lastX][lastY - 1] == 0) {
-                                    newMove = new GameMove(vertexToPlace, new Coordinate(lastX, lastY - 1));
-                                    break;
-                                } else {
-                                    lastX--;
-                                    lastY--;
-                                    if (lastX < minX || lastY < minY)
-                                        break;
-                                }
-                            }
-                            break;
-                        case Left:
-                            while (true) {
-                                if (lastY > 0 && usedCoordinates[lastX][lastY - 1] == 0) {
-                                    newMove = new GameMove(vertexToPlace, new Coordinate(lastX, lastY - 1));
-                                    break;
-                                } else if (lastX < width - 1 && usedCoordinates[lastX + 1][lastY] == 0) {
-                                    newMove = new GameMove(vertexToPlace, new Coordinate(lastX + 1, lastY));
-                                    break;
-                                } else {
-                                    lastX++;
-                                    lastY--;
-                                    if (lastX > maxX - 1 || lastY < minY)
-                                        break;
-                                }
-                            }
-                            break;
-                        case Top:
-                            while (true) {
-                                // System.out.print(lastX + " " + lastY);
-                                if (lastX < width - 1 && usedCoordinates[lastX + 1][lastY] == 0) {
-                                    // System.out.println("if");
-                                    newMove = new GameMove(vertexToPlace, new Coordinate(lastX + 1, lastY));
-                                    break;
-                                } else if (lastY < height - 1 && usedCoordinates[lastX][lastY + 1] == 0) {
-                                    // System.out.println("elseif");
-                                    newMove = new GameMove(vertexToPlace, new Coordinate(lastX, lastY + 1));
-                                    break;
-                                } else {
-                                    // System.out.println("else");
-                                    lastX++;
-                                    lastY++;
-                                    if (lastX > maxX - 1 || lastY > maxY - 1)
-                                        break;
-                                }
-                            }
-                            break;
-                        case Right:
-                            while (true) {
-                                if (lastY < height - 1 && usedCoordinates[lastX][lastY + 1] == 0) {
-                                    newMove = new GameMove(vertexToPlace, new Coordinate(lastX, lastY + 1));
-                                    break;
-                                } else if (lastX > 0 && usedCoordinates[lastX - 1][lastY] == 0) {
-                                    newMove = new GameMove(vertexToPlace, new Coordinate(lastX - 1, lastY));
-                                    break;
-                                } else {
-                                    lastX--;
-                                    lastY++;
-                                    if (lastX < minX || lastY > maxY - 1)
-                                        break;
-                                }
-                            }
-                            break;
-                    }
-                }
-            }
-            // We either have no real last move or no neighbor for our lastmove
-            if (newMove == null) {
-                for (Vertex vertex : g.getVertices()) {
-                    if (!gs.getPlacedVertices().contains(vertex)) {
-                        vertexToPlace = vertex;
-                        break; // There should always be a valid vertex here
-                    }
-                }
-                int circumference = treeWidth * 2 + treeHeight * 2 - 4;
-                int fieldID = r.nextInt(circumference);
-                int dynamicTreeWidth = treeWidth;
-                int dynamicTreeHeight = treeHeight;
-                int x = 0;
-                int y = 0;
-                for (int idx = 0; idx < g.getN() / 10; idx++) {// TODO /10 might need some adjustment
-                    // Place on top row (ID 0-9)
-                    // Place on right column (ID 10-18)
-                    // Place on bottom row (ID 19-27)
-                    // Place on left column (ID 28-35)
-                    if (fieldID < dynamicTreeWidth) {
-                        x = fieldID + minX;
-                        y = minY;
-                    } else if (fieldID < dynamicTreeWidth + dynamicTreeHeight - 1) {
-                        x = maxX - 1;
-                        y = minY + (fieldID - dynamicTreeWidth) + 1;
-                    } else if (fieldID < dynamicTreeWidth * 2 + dynamicTreeHeight - 2) {
-                        x = maxX - 1 - (fieldID - dynamicTreeWidth - dynamicTreeHeight + 2);
-                        y = maxY - 1;
-                    } else if (fieldID < circumference) {
-                        x = minX;
-                        y = maxY - 1 - (fieldID - 2 * dynamicTreeWidth - dynamicTreeHeight + 3);
-                    } else {
-                        break;
-                    }
-                    if (x > usedCoordinates.length - 1 || y > usedCoordinates[0].length - 1 || x < 0 || y < 0)
-                        break;
-                    // check if it is an unplaced position
-                    if (usedCoordinates[x][y] == 0) {
-                        newMove = new GameMove(vertexToPlace, new Coordinate(x, y));
-                        break;
-                    }
-                    fieldID++;
-                    if (fieldID >= circumference) {
-                        fieldID = 0;
-                        minX++;
-                        minY++;
-                        maxX--;
-                        maxY--;
-                        dynamicTreeHeight = dynamicTreeHeight - 2;
-                        dynamicTreeWidth = dynamicTreeWidth - 2;
-                        circumference = dynamicTreeHeight * 2 + dynamicTreeWidth * 2 - 4;
-                    }
-                }
-            }
-            if (newMove != null && vertexToPlace != null) {
-                openTreeEndpoints.add(vertexToPlace);
-                return newMove;
-            }
-
-            // Found no easy move, do some random stuff and try again
-            return getBruteForceMove(false, lastMove); // Found no easy move, do some random stuff and try again
-        } catch (Exception ex) {
-            return getBruteForceMove(false, lastMove);
-        }
-    }
-
-    public boolean enemyMirrors() {
-        int mirroredMoves = 0;
-        ArrayList<Vertex> lastNCopy = lastNVertices;
-        Vertex oldVertex = lastNCopy.remove(0);
-        HashMap<Vertex, Coordinate> coordinates = gs.getVertexCoordinates();
-
-        for (Vertex vertex : lastNVertices) {
-            Coordinate oldCoordinate = coordinates.get(oldVertex);
-            Coordinate newCoordinate = coordinates.get(vertex);
-            double distance = Math.sqrt(Math.pow(oldCoordinate.getX() - newCoordinate.getX(), 2)
-                    + Math.pow(oldCoordinate.getY() - newCoordinate.getY(), 2));
-            if (distance > (height > width ? height / 2
-                    : width / 2)) {
-                mirroredMoves++;
-            }
-        }
-        return (mirroredMoves > lastNVertices.size() / 2);
-    }
-
-    public ClosestBoardEdge findClosestBoardEdge(int x, int y) {
-        if (x < y) {
-            if (height - y < x)
-                return ClosestBoardEdge.Bottom;
-            return ClosestBoardEdge.Left;
-        } else {
-            if (y < width - x)
-                return ClosestBoardEdge.Top;
-            return ClosestBoardEdge.Right;
-        }
-    }
-
+    /**
+     * Return a valid game move aiding the objective of minimizing.
+     * 
+     * @param lastMove the last move made by the opponent, {@code null} if it is the
+     *                 first move of the game
+     * @return a valid game move
+     */
     public GameMove getMinimizingMove(GameMove lastMove) {
         // If the enemy tries to counter our method by always placing our neighbours we
         // return to random playing
 
         // TODO: Add check for enemyMirroredOnce if neccessary
-        // if (!lastNVertices.isEmpty() && enemyStealsNeighbor()) {
+        // if (!this.vertexHistory.isEmpty() && enemyStealsNeighbor()) {
         // if (enemyMirrors()) {
-        // openTreeEndpoints = new ArrayList<>();
+        // this.openTreeEndpoints = new ArrayList<>();
         // // enemyMirroredOnce = true;
-        // return treeMinimizer(lastMove, new Coordinate(width / 2, height / 2), width /
-        // 15, height / 15);
+        // return treeMinimizer(lastMove, new Coordinate(this.width / 2, this.height /
+        // 2),
+        // this.width /
+        // 15, this.height / 15);
         // }
-        // return getBruteForceMove(false, lastMove);
+        // return getBruteForceMove(lastMove, false);
         // }
 
-        return treeMinimizer(lastMove, new Coordinate(width / 2, height / 2), width, height);
-
+        Coordinate treeCenter = new Coordinate(this.width / 2, this.height / 2);
+        return treeMinimizer(lastMove, treeCenter, this.width, this.height);
     }
 
-    public GameMove getBruteForceMove(boolean maximize, GameMove lastMove) {
+    /**
+     * Checks if the enemy does mirror around the center of the game board.
+     * TODO: this needs to be redone!
+     * 
+     * @return {@code true} if the enemy mirrors, {@code false} else
+     */
+    public boolean enemyMirrors() {
+        int mirroredMoves = 0;
+        for (Vertex vertex : this.vertexHistory.subList(1, this.vertexHistory.size())) {
+            Coordinate oldCoordinate = gs.getVertexCoordinates().get(this.vertexHistory.get(0));
+            Coordinate newCoordinate = gs.getVertexCoordinates().get(vertex);
+            double distance = Math.sqrt(Math.pow(oldCoordinate.getX() - newCoordinate.getX(), 2)
+                    + Math.pow(oldCoordinate.getY() - newCoordinate.getY(), 2));
+            if (distance > (this.height > this.width ? this.height / 2
+                    : this.width / 2)) {
+                mirroredMoves++;
+            }
+        }
+        return (mirroredMoves > this.vertexHistory.size() / 2);
+    }
+
+    /**
+     * Return a valid game move by using the strategy of building a tree structure
+     * at the border of the game board. If this does not work out, fallback to brute
+     * force method.
+     * TODO: strategy explanation?
+     * 
+     * @param lastMove   the last move made by the opponent, {@code null} if it is
+     *                   the first move of the game. Used for fallback brute force
+     *                   method
+     * @param treeWidth  the width the tree should be build with
+     * @param treeHeight the height the tree should be build with
+     * @return a valid game move
+     */
+    public GameMove treeMinimizer(GameMove lastMove, Coordinate center, int treeWidth, int treeHeight) {
+        Vertex vertexToPlace = null;
+        GameMove newMove = null;
+        int[][] usedCoordinates = gs.getUsedCoordinates();
+
+        int minX = center.getX() - treeWidth / 2;
+        if (minX < 0)
+            minX = 0;
+        int maxX = center.getX() + treeWidth / 2 + treeWidth % 2;
+        if (maxX > this.width)
+            maxX = this.width;
+        int minY = center.getY() - treeHeight / 2;
+        if (minY < 0)
+            minY = 0;
+        int maxY = center.getY() + treeHeight / 2 + treeHeight % 2;
+        if (maxY > this.height)
+            maxY = this.height;
+
+        if (!this.openTreeEndpoints.isEmpty()) {
+            // System.out.println("lastOwnMove != null");
+            ArrayList<Vertex> unplacedNeighbors = new ArrayList<>();
+            Vertex referenceVertex = null;
+            ArrayList<Vertex> usedUpVertices = new ArrayList<>();
+            for (Vertex referenceVertex_ : this.openTreeEndpoints) {
+                unplacedNeighbors = getUnplacedNeighbors(referenceVertex_);
+                if (!unplacedNeighbors.isEmpty()) {
+                    referenceVertex = referenceVertex_;
+                    break;
+                } else {
+                    usedUpVertices.add(referenceVertex_);
+                }
+            }
+            for (Vertex vertexToRemove : usedUpVertices) {
+                this.openTreeEndpoints.remove(vertexToRemove);
+            }
+            if (!unplacedNeighbors.isEmpty()) {
+                vertexToPlace = unplacedNeighbors.get(unplacedNeighbors.size() - 1);
+                int lastX = gs.getVertexCoordinates().get(referenceVertex).getX();
+                int lastY = gs.getVertexCoordinates().get(referenceVertex).getY();
+                // System.out.println(lastX + " " + lastY);
+                switch (findClosestBoardEdge(lastX, lastY)) {
+                    case Bottom:
+                        while (true) {
+                            if (lastX > 0 && usedCoordinates[lastX - 1][lastY] == 0) {
+                                newMove = new GameMove(vertexToPlace, new Coordinate(lastX - 1, lastY));
+                                break;
+                            } else if (lastY > 0 && usedCoordinates[lastX][lastY - 1] == 0) {
+                                newMove = new GameMove(vertexToPlace, new Coordinate(lastX, lastY - 1));
+                                break;
+                            } else {
+                                lastX--;
+                                lastY--;
+                                if (lastX < minX || lastY < minY)
+                                    break;
+                            }
+                        }
+                        break;
+                    case Left:
+                        while (true) {
+                            if (lastY > 0 && usedCoordinates[lastX][lastY - 1] == 0) {
+                                newMove = new GameMove(vertexToPlace, new Coordinate(lastX, lastY - 1));
+                                break;
+                            } else if (lastX < this.width - 1 && usedCoordinates[lastX + 1][lastY] == 0) {
+                                newMove = new GameMove(vertexToPlace, new Coordinate(lastX + 1, lastY));
+                                break;
+                            } else {
+                                lastX++;
+                                lastY--;
+                                if (lastX > maxX - 1 || lastY < minY)
+                                    break;
+                            }
+                        }
+                        break;
+                    case Top:
+                        while (true) {
+                            // System.out.print(lastX + " " + lastY);
+                            if (lastX < this.width - 1 && usedCoordinates[lastX + 1][lastY] == 0) {
+                                // System.out.println("if");
+                                newMove = new GameMove(vertexToPlace, new Coordinate(lastX + 1, lastY));
+                                break;
+                            } else if (lastY < this.height - 1 && usedCoordinates[lastX][lastY + 1] == 0) {
+                                // System.out.println("elseif");
+                                newMove = new GameMove(vertexToPlace, new Coordinate(lastX, lastY + 1));
+                                break;
+                            } else {
+                                // System.out.println("else");
+                                lastX++;
+                                lastY++;
+                                if (lastX > maxX - 1 || lastY > maxY - 1)
+                                    break;
+                            }
+                        }
+                        break;
+                    case Right:
+                        while (true) {
+                            if (lastY < this.height - 1 && usedCoordinates[lastX][lastY + 1] == 0) {
+                                newMove = new GameMove(vertexToPlace, new Coordinate(lastX, lastY + 1));
+                                break;
+                            } else if (lastX > 0 && usedCoordinates[lastX - 1][lastY] == 0) {
+                                newMove = new GameMove(vertexToPlace, new Coordinate(lastX - 1, lastY));
+                                break;
+                            } else {
+                                lastX--;
+                                lastY++;
+                                if (lastX < minX || lastY > maxY - 1)
+                                    break;
+                            }
+                        }
+                        break;
+                }
+            }
+        }
+        // We either have no real last move or no neighbor for our lastmove
+        if (newMove == null) {
+            for (Vertex vertex : g.getVertices()) {
+                if (!gs.getPlacedVertices().contains(vertex)) {
+                    vertexToPlace = vertex;
+                    break; // There should always be a valid vertex here
+                }
+            }
+            int circumference = treeWidth * 2 + treeHeight * 2 - 4;
+            int fieldID = this.r.nextInt(circumference);
+            int dynamicTreeWidth = treeWidth;
+            int dynamicTreeHeight = treeHeight;
+            int x = 0;
+            int y = 0;
+            for (int idx = 0; idx < g.getN() / 10; idx++) {// TODO /10 might need some adjustment
+                // Place on top row (ID 0-9)
+                // Place on right column (ID 10-18)
+                // Place on bottom row (ID 19-27)
+                // Place on left column (ID 28-35)
+                if (fieldID < dynamicTreeWidth) {
+                    x = fieldID + minX;
+                    y = minY;
+                } else if (fieldID < dynamicTreeWidth + dynamicTreeHeight - 1) {
+                    x = maxX - 1;
+                    y = minY + (fieldID - dynamicTreeWidth) + 1;
+                } else if (fieldID < dynamicTreeWidth * 2 + dynamicTreeHeight - 2) {
+                    x = maxX - 1 - (fieldID - dynamicTreeWidth - dynamicTreeHeight + 2);
+                    y = maxY - 1;
+                } else if (fieldID < circumference) {
+                    x = minX;
+                    y = maxY - 1 - (fieldID - 2 * dynamicTreeWidth - dynamicTreeHeight + 3);
+                } else {
+                    break;
+                }
+                if (x > usedCoordinates.length - 1 || y > usedCoordinates[0].length - 1 || x < 0 || y < 0)
+                    break;
+                // check if it is an unplaced position
+                if (usedCoordinates[x][y] == 0) {
+                    newMove = new GameMove(vertexToPlace, new Coordinate(x, y));
+                    break;
+                }
+                fieldID++;
+                if (fieldID >= circumference) {
+                    fieldID = 0;
+                    minX++;
+                    minY++;
+                    maxX--;
+                    maxY--;
+                    dynamicTreeHeight = dynamicTreeHeight - 2;
+                    dynamicTreeWidth = dynamicTreeWidth - 2;
+                    circumference = dynamicTreeHeight * 2 + dynamicTreeWidth * 2 - 4;
+                }
+            }
+        }
+        if (newMove != null && vertexToPlace != null) {
+            this.openTreeEndpoints.add(vertexToPlace);
+            return newMove;
+        }
+
+        // fallback: get a minimizing brute force move instead
+        return getBruteForceMove(lastMove, false);
+    }
+
+    /**
+     * Return the {@code enum BoardEdge} closest to the input position.
+     * 
+     * @param x position in x-direction
+     * @param y position in y-direction
+     * @return a value of the {@code enum BoardEdge}
+     */
+    public BoardEdge findClosestBoardEdge(int x, int y) {
+        if (x < y) {
+            if (this.height - y < x)
+                return BoardEdge.Bottom;
+            return BoardEdge.Left;
+        } else {
+            if (y < this.width - x)
+                return BoardEdge.Top;
+            return BoardEdge.Right;
+        }
+    }
+
+    /**
+     * Return a valid game move that was found by (semi) brute force.
+     * 
+     * @param lastMove the last move made by the opponent, {@code null} if it is the
+     *                 first move of the game
+     * @param maximize boolean containing information about the player's objective
+     *                 (minimizing or maximizing)
+     * @return a valid game move
+     * @apiNote Sample a number of vertices from the neighborhood of the last placed
+     *          vertex. For each of them check all free coordinates on the game
+     *          board and calculate the number of crossings that vertex at this free
+     *          coordinate would produce.
+     */
+    public GameMove getBruteForceMove(GameMove lastMove, boolean maximize) {
         long startTime = System.nanoTime();
-        // get the first vertex that is not yet placed
         Vertex v = null;
         ArrayList<Vertex> vertices = new ArrayList<>();
+
+        // get the last moves unplaced neighbors
         if (lastMove != null)
             vertices = getUnplacedNeighbors(lastMove.getVertex());
-        if (vertices.isEmpty()) {
-            for (Vertex v_ : g.getVertices()) {
+        // and (if there is at least one) take the one that has itself again the most
+        // unplaced neighbors
+        if (!vertices.isEmpty()) {
+            v = findBestVertex(vertices, maximize);
+        } else {
+            for (Vertex v_ : this.g.getVertices()) {
                 if (!gs.getPlacedVertices().contains(v_)) {
                     v = v_;
                     break;
                 }
             }
-        } else {
-            v = findMostNeighborsVertex(vertices, maximize);
         }
 
         // get random vertex samples and v in a list
         List<Vertex> trimmedVertices = new ArrayList<>();
         if (vertexSampleSize > 1) {
             List<Vertex> allVertices = new ArrayList<>();
-            for (Vertex vertex : g.getVertices()) {
+            for (Vertex vertex : this.g.getVertices()) {
                 if (!gs.getPlacedVertices().contains(vertex)) {
                     allVertices.add(vertex);
                 }
@@ -499,9 +641,9 @@ public class MixingPlayer implements NewPlayer {
         int maxVal = Integer.MIN_VALUE;
         int minRow = -1, minCol = -1, maxRow = -1, maxCol = -1;
 
-        for (int i = 0; i < heatMap.size(); i++) {
-            for (int j = 0; j < heatMap.get(i).size(); j++) {
-                int val = heatMap.get(i).get(j);
+        for (int i = 0; i < this.heatmap.size(); i++) {
+            for (int j = 0; j < this.heatmap.get(i).size(); j++) {
+                int val = this.heatmap.get(i).get(j);
                 if (val < minVal) {
                     minVal = val;
                     minRow = j;
@@ -525,8 +667,8 @@ public class MixingPlayer implements NewPlayer {
         // Using abort in case of areas being completly filled, chose a reasonable(?)
         // value
         for (int sample = 0, abort = 0; sample < sampleSize / 2 && abort < 200; sample++, abort++) {
-            int x = r.nextInt(width / heatMapSize) + bestSquareX * (width / heatMapSize);
-            int y = r.nextInt(height / heatMapSize) + bestSquareY * (height / heatMapSize);
+            int x = this.r.nextInt(this.width / heatMapSize) + bestSquareX * (this.width / heatMapSize);
+            int y = this.r.nextInt(this.height / heatMapSize) + bestSquareY * (this.height / heatMapSize);
             if (gs.getUsedCoordinates()[x][y] != 0) {
                 sample--;
             } else {
@@ -539,8 +681,8 @@ public class MixingPlayer implements NewPlayer {
         // v
         int verticesToAdd = sampleSize - xPositions.size();
         for (int sample = 0; sample < verticesToAdd; sample++) {
-            int x = r.nextInt(width);
-            int y = r.nextInt(height);
+            int x = this.r.nextInt(this.width);
+            int y = this.r.nextInt(this.height);
             if (gs.getUsedCoordinates()[x][y] != 0) { // The random coordinate is already taken
                 sample--;
             } else {
@@ -550,7 +692,6 @@ public class MixingPlayer implements NewPlayer {
         }
 
         // Number of crossings before we place the vertex
-        // Number of crossings before we place the vertex
         int bestTotalCrossingsByVertex = maximize ? Integer.MIN_VALUE : Integer.MAX_VALUE;
         VertexSamplePair bestPair = null;
 
@@ -559,7 +700,7 @@ public class MixingPlayer implements NewPlayer {
         for (int sample = 0; sample < sampleSize; sample++) {
             // System.out.println(sample);
             // Adding 10% to make sure we do not run out of time
-            if (1.1 * (System.nanoTime() - startTime) > playingTime / (g.getN() / 2)) {
+            if (1.1 * (System.nanoTime() - startTime) > playingTime / (this.g.getN() / 2)) {
                 // System.out.println("checked " + sample + " samples");
                 break;
             }
@@ -569,7 +710,8 @@ public class MixingPlayer implements NewPlayer {
             for (Vertex vertexToSample : verticesToSample) {
                 // Add vertex sampling here
                 Coordinate coordinateToAdd = new Coordinate(xPositions.get(sample), yPositions.get(sample));
-                int crossingsAddedByVertex = betterEdgeCrossingRTree.testCoordinate(vertexToSample, coordinateToAdd,
+                int crossingsAddedByVertex = this.betterEdgeCrossingRTree.testCoordinate(vertexToSample,
+                        coordinateToAdd,
                         gs.getVertexCoordinates());
                 // ??????? Error wenn mehr als ein Vertex abgefragt wird.
                 if (maximize ? crossingsAddedByVertex > bestTotalCrossingsByVertex
@@ -584,23 +726,71 @@ public class MixingPlayer implements NewPlayer {
                 yPositions.get(bestPair.getSample()));
         HashMap<Vertex, Coordinate> mapVertexToCoordinate = gs.getVertexCoordinates();
         mapVertexToCoordinate.put(bestPair.vertex, coordinateToAdd);
-        betterEdgeCrossingRTree.insertAllCoodinates(gs.getPlacedVertices());
+        this.betterEdgeCrossingRTree.insertAllCoordinates(gs.getPlacedVertices());
 
         return new GameMove(v, coordinateToAdd);
     }
 
-    public GameMove getMirroringMove(GameMove lastMove) {
-        // place it mirrored around center point on the circle/ellipsis
-        // whose size is given by this.relativeCircleSize
+    /**
+     * Return the vertex that has the best requirements for the player objective.
+     * 
+     * @param vertices a list of unplaced vertices from which we want to find the
+     *                 one with most (un)placed neighbors
+     * @param maximize boolean containing information about the player's objective
+     *                 (minimizing or maximizing)
+     * @return the best vertex
+     * @apiNote 'Best' is here defined as having the most placed neighbors when
+     *          maximizing and the most unplaced neighbors when minimizing.
+     */
+    public Vertex findBestVertex(List<Vertex> vertices, boolean maximize) {
+        Vertex currentBest = vertices.remove(0);
+        int p = getPlacedNeighbors(currentBest).size();
+        int u = getUnplacedNeighbors(currentBest).size();
+        assert u + p == Iterables.size(this.g.getIncidentEdges(currentBest));
 
+        for (Vertex vertex : vertices) {
+            int v = getUnplacedNeighbors(vertex).size();
+
+            if (maximize) {
+                // For maximize, find the vertex with the most placed neighbors (that's
+                // different from least unplaced neighbors!)
+                if (v > p) {
+                    currentBest = vertex;
+                    p = getPlacedNeighbors(currentBest).size();
+                }
+            } else {
+                // For minimize, find the vertex with the most unplaced neighbors
+                if (v > u) {
+                    currentBest = vertex;
+                    u = getUnplacedNeighbors(currentBest).size();
+                }
+            }
+        }
+
+        return currentBest;
+    }
+
+    /**
+     * Return a valid game move that was found by mirroring around the center.
+     * 
+     * @param lastMove the last move made by the opponent, {@code null} if it is
+     *                 the first move of the game.
+     * @return a valid game move
+     * @apiNote Place the vertex mirrored around the center point of the board on an
+     *          ellipsis whose major and minor axes are are given by
+     *          {@code this.relativeCircleSize * this.width} and
+     *          {@code ... * this.height} respectively. If this coordinate is
+     *          occupied, use a near neighboring coordinate instead.
+     */
+    public GameMove getMirroringMove(GameMove lastMove) {
         // if it's the first move, take the first vertex and place it on the circle
         // right side, it's as good as any
-        // TODO: is it if the field is not square??
+        // TODO: is it if the board is not square??
         if (lastMove == null) {
-            double x = width * (0.5 + relativeCircleSize);
-            double y = height * 0.5;
-            Coordinate c = getCoordinateClampedToPlayingField(x, y);
-            return new GameMove(g.getVertices().iterator().next(), c);
+            double x = this.width * (0.5 + relativeCircleSize);
+            double y = this.height * 0.5;
+            Coordinate c = getCoordinateClampedToBoard(x, y);
+            return new GameMove(this.g.getVertices().iterator().next(), c);
         }
 
         // TODO: alternatively: get a good vertex (disregard last move)
@@ -621,7 +811,7 @@ public class MixingPlayer implements NewPlayer {
         Vertex v = null;
         int maxNeighborsPlaced = -1;
         for (Vertex v_ : neighbors) {
-            int n_ = (int) StreamSupport.stream(g.getIncidentEdges(v_).spliterator(), false).count()
+            int n_ = (int) StreamSupport.stream(this.g.getIncidentEdges(v_).spliterator(), false).count()
                     - getUnplacedNeighbors(v_).size();
             if (n_ > maxNeighborsPlaced) {
                 v = v_;
@@ -631,18 +821,65 @@ public class MixingPlayer implements NewPlayer {
 
         // mirror around the center onto the circle of highest probabilty
         // get the unit vector from the lastMove vertex towards the center
-        int lastX = gs.getVertexCoordinates().get(lastMove.getVertex()).getX();
-        int lastY = gs.getVertexCoordinates().get(lastMove.getVertex()).getY();
-        UnitVector uvec = new UnitVector(width / 2.0 - lastX, height / 2.0 - lastY);
+        UnitVector uvec = new UnitVector(this.width / 2.0 - lastMove.getCoordinate().getX(),
+                this.height / 2.0 - lastMove.getCoordinate().getY());
         // get the position on the highest probability circle
-        double x = width * (0.5 + uvec.getX() * relativeCircleSize);
-        double y = height * (0.5 + uvec.getY() * relativeCircleSize);
-        return new GameMove(v, getNearestFreeCoordinate(getCoordinateClampedToPlayingField(x, y)));
+        double x = this.width * (0.5 + uvec.getX() * relativeCircleSize);
+        double y = this.height * (0.5 + uvec.getY() * relativeCircleSize);
+        return new GameMove(v, getNearestFreeCoordinate(getCoordinateClampedToBoard(x, y)));
     }
 
-    public Coordinate getNearestFreeCoordinate(Coordinate c) {
-        int x = c.getX();
-        int y = c.getY();
+    /**
+     * Return a list of unplaced neighbors.
+     * 
+     * @param vertex the vertex to get the unplaced neighbors to
+     * @return the list of unplaced neighbors
+     */
+    public ArrayList<Vertex> getUnplacedNeighbors(Vertex vertex) {
+        ArrayList<Vertex> neighbors = new ArrayList<>();
+        if (this.g.getIncidentEdges(vertex) == null) {
+            return neighbors;
+        }
+        for (Edge edge : this.g.getIncidentEdges(vertex)) {
+            Vertex vertexToAdd = vertex.equals(edge.getS()) ? edge.getT() : edge.getS();
+            if (!gs.getPlacedVertices().contains(vertexToAdd)) {
+                neighbors.add(vertexToAdd);
+            }
+        }
+        return neighbors;
+    }
+
+    /**
+     * Return a list of placed neighbors.
+     * 
+     * @param vertex the vertex to get the placed neighbors to
+     * @return the list of placed neighbors
+     */
+    public ArrayList<Vertex> getPlacedNeighbors(Vertex vertex) {
+        ArrayList<Vertex> neighbors = new ArrayList<>();
+        if (this.g.getIncidentEdges(vertex) == null) {
+            return neighbors;
+        }
+        for (Edge edge : this.g.getIncidentEdges(vertex)) {
+            Vertex vertexToAdd = vertex.equals(edge.getS()) ? edge.getT() : edge.getS();
+            if (gs.getPlacedVertices().contains(vertexToAdd)) {
+                neighbors.add(vertexToAdd);
+            }
+        }
+        return neighbors;
+    }
+
+    /**
+     * Return a free coordinate given a possibly occupied coordinate.
+     * 
+     * @param coordinate the coordinate we want to get as close a free coordinate to
+     * @return a free coordinate
+     * @apiNote The nearest free coordinate is checked in a spiral fashion if the
+     *          coordinates have the same distance.
+     */
+    public Coordinate getNearestFreeCoordinate(Coordinate coordinate) {
+        int x = coordinate.getX();
+        int y = coordinate.getY();
         // if position is not taken yet, return it
         if (gs.getUsedCoordinates()[x][y] == 0) {
             return new Coordinate(x, y);
@@ -651,10 +888,10 @@ public class MixingPlayer implements NewPlayer {
         int i = 1;
         while (true) {
             for (int j = -i; j <= i; j++) {
-                if ((x + j) >= 0 && (x + j) < width) {
+                if ((x + j) >= 0 && (x + j) < this.width) {
                     for (int k = -i; k <= i; k++) {
                         if (Math.abs(j) == i || Math.abs(k) == i) {
-                            if ((y + k) >= 0 && (y + k) < height) {
+                            if ((y + k) >= 0 && (y + k) < this.height) {
                                 if (gs.getUsedCoordinates()[x + j][y + k] == 0) {
                                     return new Coordinate(x + j, y + k);
                                 }
@@ -668,68 +905,34 @@ public class MixingPlayer implements NewPlayer {
     }
 
     /**
-     * Computes a random valid move.
+     * Return a valid board coordinate.
      * 
-     * @return A random valid move.
+     * @param x (double) position in x-direction
+     * @param y (double) position in y-direction
+     * @return a (integer) coordinate on the game board
      */
-    private GameMove getRandomMove() {
-        int stillToBePlaced = g.getN() - gs.getPlacedVertices().size();
-        int next = r.nextInt(stillToBePlaced);
-        int skipped = 0;
-        Vertex v = null;
-        for (Vertex u : g.getVertices()) {
-            if (!gs.getPlacedVertices().contains(u)) {
-                if (skipped < next) {
-                    skipped++;
-                    continue;
-                }
-                v = u;
-                break;
-            }
-        }
-        Coordinate c;
-        do {
-            c = new Coordinate(r.nextInt(width), r.nextInt(height));
-        } while (gs.getUsedCoordinates()[c.getX()][c.getY()] != 0);
-        return new GameMove(v, c);
-    }
-
-    public ArrayList<Vertex> getUnplacedNeighbors(Vertex v) {
-        ArrayList<Vertex> neighbors = new ArrayList<>();
-        if (g.getIncidentEdges(v) == null) {
-            return neighbors;
-        }
-        for (Edge edge : g.getIncidentEdges(v)) {
-            Vertex vertexToAdd = v.equals(edge.getS()) ? edge.getT() : edge.getS();
-            if (!gs.getPlacedVertices().contains(vertexToAdd)) {
-                neighbors.add(vertexToAdd);
-            }
-        }
-        return neighbors;
-    }
-
-    public Coordinate getCoordinateClampedToPlayingField(double x, double y) {
-        // simple: make sure its in bounds of the playing field
-        // int a = Math.max(Math.min(roundToClosestInteger(x), width-1), 0);
-        // int b = Math.max(Math.min(roundToClosestInteger(y), height-1), 0);
-        // advanced: do it in the direction of the center of the field
-        if (!(x >= 0 && x < width && y >= 0 && y < height)) {
-            UnitVector uvec = new UnitVector(width / 2.0 - x, height / 2.0 - y);
+    public Coordinate getCoordinateClampedToBoard(double x, double y) {
+        // simple: make sure its in bounds of the game board
+        // int a = Math.max(Math.min(roundToClosestInteger(x), this.width-1), 0);
+        // int b = Math.max(Math.min(roundToClosestInteger(y), this.height-1), 0);
+        // advanced: do it in the direction of the center of the board
+        if (!(x >= 0 && x < this.width && y >= 0 && y < this.height)) {
+            UnitVector uvec = new UnitVector(this.width / 2.0 - x, this.height / 2.0 - y);
             double alpha = 0.0;
             if (x < 0) {
                 alpha = -x / uvec.getX();
-            } else if (x > width - 1) {
-                // width-1 = x + c * uvec.getX()
-                // c = (width-1 - x) / uvec.getX()
-                alpha = (width - 1 - x) / uvec.getX();
+            } else if (x > this.width - 1) {
+                // this.width-1 = x + c * uvec.getX()
+                // c = (this.width-1 - x) / uvec.getX()
+                alpha = (this.width - 1 - x) / uvec.getX();
             }
             x += alpha * uvec.getX();
             y += alpha * uvec.getY();
 
             if (y < 0) {
                 alpha = -y / uvec.getY();
-            } else if (y > height - 1) {
-                alpha = (height - 1 - y) / uvec.getY();
+            } else if (y > this.height - 1) {
+                alpha = (this.height - 1 - y) / uvec.getY();
             }
             x += alpha * uvec.getX();
             y += alpha * uvec.getY();
@@ -737,75 +940,28 @@ public class MixingPlayer implements NewPlayer {
 
         int a = roundToClosestInteger(x);
         int b = roundToClosestInteger(y);
+
+        // check if the coordinate is actually on the board
         assert a >= 0 : "1";
-        assert a < width : "2";
+        assert a < this.width : "2";
         assert b >= 0 : "3";
-        assert b < height : "4";
+        assert b < this.height : "4";
+
         return new Coordinate(a, b);
     }
 
-    public int roundToClosestInteger(double val) {
-        if (val < 0) {
-            return (int) Math.ceil(val);
+    /**
+     * Round the double value to the closest integer. This works for negative values
+     * as well.
+     * 
+     * @param value double value to round
+     * @return the closest integer value
+     */
+    public int roundToClosestInteger(double value) {
+        if (value < 0) {
+            return (int) Math.ceil(value);
         }
-        return (int) Math.floor(val);
-    }
-
-    public Vertex findMostNeighborsVertex(List<Vertex> vertices, boolean maximize) {
-        Vertex mostNeighboursVertex = vertices.get(0);
-
-        for (Vertex vertex : vertices) {
-            List<Vertex> unplacedNeighbors = getUnplacedNeighbors(vertex);
-
-            if (maximize) {
-                // For maximize, find the vertex with the least unplaced neighbors
-                if (unplacedNeighbors.size() < getUnplacedNeighbors(mostNeighboursVertex).size()) {
-                    mostNeighboursVertex = vertex;
-                }
-            } else {
-                // For !maximize, find the vertex with the most unplaced neighbors
-                if (unplacedNeighbors.size() > getUnplacedNeighbors(mostNeighboursVertex).size()) {
-                    mostNeighboursVertex = vertex;
-                }
-            }
-        }
-
-        return mostNeighboursVertex;
-    }
-
-    @Override
-    public void initializeNextRound(Graph g, int width, int height, Role role) {
-        this.g = g;
-        this.width = width;
-        this.height = height;
-        if (height < this.heatMapSize || width < this.heatMapSize) {
-            this.heatMapSize = 1;
-        }
-        this.gs = new GameState(g, width, height);
-        this.betterEdgeCrossingRTree = new BetterEdgeCrossingRTree(g);
-        heatMap = new ArrayList<ArrayList<Integer>>();
-        lastNVertices = new ArrayList<>();
-        for (int i = 0; i < heatMapSize; i++) {
-            heatMap.add(new ArrayList<Integer>(Collections.nCopies(heatMapSize, 0)));
-        }
-
-        for (Vertex vertex : g.getVertices()) {
-            this.mapIdToVertex.put(vertex.getId(), vertex);
-        }
-        if (width * height < 10000) {
-            this.smallFieldStrategy = true;
-            this.sampleSize = this.g.getN();
-            this.vertexSampleSize = 3;
-        } else {
-            this.smallFieldStrategy = false;
-            this.sampleSize = 500;
-            this.vertexSampleSize = 1;
-        }
-    }
-
-    @Override
-    public String getName() {
-        return name;
+        return (int) Math.floor(value);
     }
 
     /**
@@ -824,9 +980,9 @@ public class MixingPlayer implements NewPlayer {
     };
 
     /**
-     * An enum describing the closest edge to a vertex
+     * An enum describing the four edges/borders of the game board
      */
-    public enum ClosestBoardEdge {
+    public enum BoardEdge {
         Top, Right, Bottom, Left
     }
 }
