@@ -50,13 +50,11 @@ public class BetterEdgeCrossingRTree {
 
     /* ---------------- public methods -------------- */
     /**
-     * Rebuild this.vertices from a given hash of vertices.
+     * Add vertices from a hashset to this.vertices
      * 
-     * @param placedVertices the vertices
+     * @param vertices the vertices to add
      */
     public void insertAllCoordinates(HashSet<Vertex> vertices) {
-        // TODO: should this rebuild or just add to the current list?
-        this.vertices = new ArrayList<Vertex>();
         vertices.forEach(vertex -> {
             insertVertex(vertex);
         });
@@ -137,16 +135,18 @@ public class BetterEdgeCrossingRTree {
             if (s == null | t == null) {
                 continue;
             }
-            x1 = Integer.min(s.getX(), t.getX());
-            y1 = Integer.min(s.getY(), t.getY());
-            x2 = Integer.max(s.getX(), t.getX());
-            y2 = Integer.max(s.getY(), t.getY());
+
+            // update the above-scope variables to the new mins/maxs
+            x1 = Integer.min(x1, Integer.min(s.getX(), t.getX()));
+            y1 = Integer.min(y1, Integer.min(s.getY(), t.getY()));
+            x2 = Integer.max(x2, Integer.max(s.getX(), t.getX()));
+            y2 = Integer.max(y2, Integer.max(s.getY(), t.getY()));
+
             this.rTree = this.rTree.add(edge, Geometries.line(s.getX(), s.getY(), t.getX(), t.getY()));
         }
 
         HashSet<Vertex> searchedVertices = new HashSet<>();
 
-        // TODO: search the rTree in the appropriate rectangle
         Rectangle rectangle = Geometries.rectangle(x1, y1, x2, y2);
         Iterable<Entry<Edge, Geometry>> search = this.rTree.search(rectangle);
         for (Entry<Edge, Geometry> entry : search) {
@@ -169,7 +169,7 @@ public class BetterEdgeCrossingRTree {
             for (Edge edge : adjacentEdges) {
                 // for the current edge get the neighbor
                 Vertex neighbor = v == edge.getS() ? edge.getT() : edge.getS();
-                // TODO: only the placed vertex from which we get the searchedVertices is valid
+                // TODO only the placed vertex from which we get the searchedVertices is valid
                 // skip this neighbor if it wasn't placed yet
                 if (mapVertexToCoordinate.get(neighbor) == null) {
                     continue;

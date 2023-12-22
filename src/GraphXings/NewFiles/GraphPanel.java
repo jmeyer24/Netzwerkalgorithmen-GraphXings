@@ -23,10 +23,7 @@ public class GraphPanel extends JPanel {
     private Point lastMousePosition;
     private int panelHeight = 700;
     private int panelWidth = 700;
-    /**
-     * 
-     * TODO: isReady fixen
-     */
+    // TODO isReady fixen
     private boolean isReady = false;
     private List<Edge> edges;
     private HashMap<Vertex, Coordinate> vertexCoordinateMap;
@@ -148,7 +145,8 @@ public class GraphPanel extends JPanel {
                 coordinates.add(new Coordinate(scaledX, scaledY));
             }
         } catch (ConcurrentModificationException e) {
-            // TODO: handle exception
+            System.err.println("It failed:");
+            e.printStackTrace();
         }
 
     }
@@ -184,7 +182,8 @@ public class GraphPanel extends JPanel {
                 guiCoordinates.add(new GuiCoordinate(scaledX, scaledY));
             }
         } catch (Exception e) {
-            // TODO: handle exception
+            System.err.println("It failed:");
+            e.printStackTrace();
         }
     }
 
@@ -269,7 +268,8 @@ public class GraphPanel extends JPanel {
                             (int) (yEnd * zoomFactor));
                 }
             } catch (ConcurrentModificationException | NullPointerException e) {
-                // TODO: handle exception
+                System.err.println("It failed:");
+                e.printStackTrace();
             }
 
         }
@@ -291,7 +291,8 @@ public class GraphPanel extends JPanel {
                 g2d.fillOval(x - scaledPointSize / 2, y - scaledPointSize / 2, scaledPointSize, scaledPointSize);
 
             } catch (IndexOutOfBoundsException | NullPointerException e) {
-                // TODO: handle exception
+                System.err.println("It failed:");
+                e.printStackTrace();
             }
         }
 

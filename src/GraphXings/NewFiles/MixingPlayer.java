@@ -56,14 +56,11 @@ public class MixingPlayer implements NewPlayer {
      */
     private int vertexSampleSize;
     /**
-     * The percentage value with which to choose brute force over the mirror tactic
+     * The percentage value for some strategies. See {@link Strategy}
+     * 
+     * @TODO make percentage a variable for runtime maximization. See
+     *       {@link #getBruteForceMove(GameMove, boolean) BruteForce}
      */
-    // TODO: the larger the board and number of vertices, the higher the percentage
-    // TODO: description with strategies and percentages
-    // for mirroring game (e.g. annealing)
-    // TODO: make it so that this is calculated: percentage =
-    // duration(BruteForceMove) / duration(MirroringMove)
-    // TODO: alternatively: change the sample size of the brute force player part
     private double percentage;
     /**
      * Minimizer builds a tree, these are the open endpoints of this tree where we
@@ -75,7 +72,7 @@ public class MixingPlayer implements NewPlayer {
      */
     private HashMap<String, Vertex> mapIdToVertex = new HashMap<>();
     /**
-     * The strategy used (see Strategy enum)
+     * The {@link Strategy} used
      */
     private Strategy strategy;
     /**
@@ -119,17 +116,15 @@ public class MixingPlayer implements NewPlayer {
      * name hashed as seed.
      *
      * @param percentage         for specific strategies this gives the percentage
-     *                           value (see class description)
+     *                           value (see enum Strategy documentation)
      * @param relativeCircleSize gives the radius of the mirroring circle relative
      *                           to the this.width and this.height of the game
      *                           board, along the x- and y-axes respectively
-     * @param sampleSize         the number of vertices we want to sample per
-     *                           BruteForce player game move
-     * @param vertexSampleSize   TODO: explain this
-     * @param strategy           the strategy we choose for the player. This is
-     *                           normally a combination/interpolation of mirroring
-     *                           over the game board center and the brute force
-     *                           method
+     * @param sampleSize         the number of coordinates we sample per sampled
+     *                           vertex
+     * @param vertexsampleSize   the number of vertices we sample per (BruteForce)
+     *                           player game move
+     * @param strategy           the {@link Strategy} we choose
      */
     public MixingPlayer(double percentage, double relativeCircleSize, int sampleSize, int vertexSampleSize,
             Strategy strategy) {
@@ -339,52 +334,12 @@ public class MixingPlayer implements NewPlayer {
      * @return a valid game move
      */
     public GameMove getMinimizingMove(GameMove lastMove) {
-        // If the enemy tries to counter our method by always placing our neighbours we
-        // return to random playing
-
-        // TODO: Add check for enemyMirroredOnce if neccessary
-        // if (!this.vertexHistory.isEmpty() && enemyStealsNeighbor()) {
-        // if (enemyMirrors()) {
-        // this.openTreeEndpoints = new ArrayList<>();
-        // // enemyMirroredOnce = true;
-        // return treeMinimizer(lastMove, new Coordinate(this.width / 2, this.height /
-        // 2),
-        // this.width /
-        // 15, this.height / 15);
-        // }
-        // return getBruteForceMove(lastMove, false);
-        // }
-
         Coordinate treeCenter = new Coordinate(this.width / 2, this.height / 2);
         return treeMinimizer(lastMove, treeCenter, this.width, this.height);
     }
 
     /**
-     * Checks if the enemy does mirror around the center of the game board.
-     * TODO: this needs to be redone!
-     * 
-     * @return {@code true} if the enemy mirrors, {@code false} else
-     */
-    public boolean enemyMirrors() {
-        int mirroredMoves = 0;
-        for (Vertex vertex : this.vertexHistory.subList(1, this.vertexHistory.size())) {
-            Coordinate oldCoordinate = gs.getVertexCoordinates().get(this.vertexHistory.get(0));
-            Coordinate newCoordinate = gs.getVertexCoordinates().get(vertex);
-            double distance = Math.sqrt(Math.pow(oldCoordinate.getX() - newCoordinate.getX(), 2)
-                    + Math.pow(oldCoordinate.getY() - newCoordinate.getY(), 2));
-            if (distance > (this.height > this.width ? this.height / 2
-                    : this.width / 2)) {
-                mirroredMoves++;
-            }
-        }
-        return (mirroredMoves > this.vertexHistory.size() / 2);
-    }
-
-    /**
-     * Return a valid game move by using the strategy of building a tree structure
-     * at the border of the game board. If this does not work out, fallback to brute
-     * force method.
-     * TODO: strategy explanation?
+     * Return a valid game move
      * 
      * @param lastMove   the last move made by the opponent, {@code null} if it is
      *                   the first move of the game. Used for fallback brute force
@@ -392,8 +347,16 @@ public class MixingPlayer implements NewPlayer {
      * @param treeWidth  the width the tree should be build with
      * @param treeHeight the height the tree should be build with
      * @return a valid game move
+     * @implNote Building a tree structure at the border of the game board. If this
+     *           does not work out, fallback to brute force method.
+     * @implSpec explanation
+     * @TODO write implementation Specifics
+     * @TODO constant {@code WALKING_DISTANCE} needs optimization
      */
     public GameMove treeMinimizer(GameMove lastMove, Coordinate center, int treeWidth, int treeHeight) {
+        // the distance in coordinates(!) the tree minimizer walks along the borders
+        int WALKING_DISTANCE = roundToClosestInteger(g.getN() / 10);
+
         Vertex vertexToPlace = null;
         GameMove newMove = null;
         int[][] usedCoordinates = gs.getUsedCoordinates();
@@ -505,12 +468,13 @@ public class MixingPlayer implements NewPlayer {
                 }
             }
         }
-        // We either have no real last move or no neighbor for our lastmove
+        // We either have no real last move or no neighbor for our last move
         if (newMove == null) {
+            // get an unplaced vertex (exists, else the game is done)
             for (Vertex vertex : g.getVertices()) {
                 if (!gs.getPlacedVertices().contains(vertex)) {
                     vertexToPlace = vertex;
-                    break; // There should always be a valid vertex here
+                    break;
                 }
             }
             int circumference = treeWidth * 2 + treeHeight * 2 - 4;
@@ -519,11 +483,12 @@ public class MixingPlayer implements NewPlayer {
             int dynamicTreeHeight = treeHeight;
             int x = 0;
             int y = 0;
-            for (int idx = 0; idx < g.getN() / 10; idx++) {// TODO /10 might need some adjustment
-                // Place on top row (ID 0-9)
-                // Place on right column (ID 10-18)
-                // Place on bottom row (ID 19-27)
-                // Place on left column (ID 28-35)
+            for (int i = 0; i < WALKING_DISTANCE; i++) {
+                // example for ids with 10x10 tree size
+                // top row (ID 0-9)
+                // right column (ID 10-18)
+                // bottom row (ID 19-27)
+                // left column (ID 28-35)
                 if (fieldID < dynamicTreeWidth) {
                     x = fieldID + minX;
                     y = minY;
@@ -539,13 +504,22 @@ public class MixingPlayer implements NewPlayer {
                 } else {
                     break;
                 }
-                if (x > usedCoordinates.length - 1 || y > usedCoordinates[0].length - 1 || x < 0 || y < 0)
+
+                // check if it is out of bounds (this should not happen)
+                if (x > usedCoordinates.length - 1 || y > usedCoordinates[0].length - 1 || x < 0 || y < 0) {
+                    System.err.println("There is a problem with the tree minimizer:");
+                    System.err.println("It walks off the board on its walk along the borders.");
                     break;
+                }
                 // check if it is an unplaced position
                 if (usedCoordinates[x][y] == 0) {
                     newMove = new GameMove(vertexToPlace, new Coordinate(x, y));
                     break;
                 }
+
+                // move on along the tree border to find a free coordinate and if we finished
+                // one walkthrough along the border of the board without finding one such, make
+                // the tree smaller and walk on. This creates a spiral inward.
                 fieldID++;
                 if (fieldID >= circumference) {
                     fieldID = 0;
@@ -781,28 +755,27 @@ public class MixingPlayer implements NewPlayer {
      *          {@code this.relativeCircleSize * this.width} and
      *          {@code ... * this.height} respectively. If this coordinate is
      *          occupied, use a near neighboring coordinate instead.
+     * @implNote We take the neighbor of the last move's vertex with the most placed
+     *           neighbors
+     * @TODO choose a good vertex other than the last move's
      */
     public GameMove getMirroringMove(GameMove lastMove) {
-        // if it's the first move, take the first vertex and place it on the circle
-        // right side, it's as good as any
-        // TODO: is it if the board is not square??
+        // if it's the first move, take the first vertex and place it on the circle in
+        // axis direction of the longer board side
         if (lastMove == null) {
             double x = this.width * (0.5 + relativeCircleSize);
             double y = this.height * 0.5;
+            if (this.height >= this.width) {
+                x = this.width * 0.5;
+                y = this.height * (0.5 + relativeCircleSize);
+            }
             Coordinate c = getCoordinateClampedToBoard(x, y);
             return new GameMove(this.g.getVertices().iterator().next(), c);
         }
 
-        // TODO: alternatively: get a good vertex (disregard last move)
-        // get a good vertex, either one with 2 or 3 fixed neighbors or one that might
-        // enable such a 2, 3 fixed one for oneself not the enemy don't enable the enemy
-        // by fixing a second or third neighbor
-        // Vertex v = getGoodVertex();
-        // TODO: optimize this
-        // choose the best unplaced neighbor from the lastMove's vertex
+        // else check the neighbors of the last move's vertex
         ArrayList<Vertex> neighbors = getUnplacedNeighbors(lastMove.getVertex());
-
-        // return another random move if all neighbors are placed already
+        // return a random move if all neighbors are placed already
         if (neighbors.isEmpty()) {
             return getRandomMove();
         }
@@ -965,24 +938,27 @@ public class MixingPlayer implements NewPlayer {
     }
 
     /**
-     * An enum describing the strategy used
+     * The available strategies for the player
      * 
-     * BruteForce: always choose the BruteForceMove
-     * Mirroring: always choose the MirroringMove
-     * Percentage: given a percentage choose the getBruteForceMove randomly
-     * Annealing: given a percentage choose the first turns to be getMirroringMove
-     * (e.g. span lines across center first, then getBruteForceMove choice)
-     * AnnealingReverse: given a percentage choose the first turns to be
-     * getBruteForceMove
+     * @param BruteForce       only BruteForce
+     * @param Mirroring        only Mirroring
+     * @param Percentage       randomly between Mirroring and BruteForce,
+     *                         {@code percentage} gives the probability for
+     *                         BruteForce
+     * @param Annealing        first Mirroring then BruteForce, {@code percentage}
+     *                         gives the percentage of Mirroring over the whole game
+     * @param AnnealingReverse first BruteForce then Mirroring, {@code percentage}
+     *                         gives the percentage of BruteForce over the whole
+     *                         game
      */
     public enum Strategy {
-        BruteForce, Mirroring, Percentage, Annealing, AnnealingReverse
+        BruteForce, Mirroring, Percentage, Annealing, AnnealingReverse;
     };
 
     /**
-     * An enum describing the four edges/borders of the game board
+     * The four sides of the game board
      */
     public enum BoardEdge {
-        Top, Right, Bottom, Left
+        Top, Right, Bottom, Left;
     }
 }
