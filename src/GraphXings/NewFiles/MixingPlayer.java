@@ -152,6 +152,17 @@ public class MixingPlayer implements NewPlayer {
         return makeMove(lastMove, false);
     }
 
+    // TODO: do both of those angle optimization strategies!!!
+    @Override
+    public GameMove maximizeCrossingAngles(GameMove lastMove) {
+        return makeMove(lastMove, true);
+    }
+
+    @Override
+    public GameMove minimizeCrossingAngles(GameMove lastMove) {
+        return makeMove(lastMove, false);
+    }
+
     @Override
     public void initializeNextRound(Graph g, int width, int height, Role role) {
         this.g = g;
