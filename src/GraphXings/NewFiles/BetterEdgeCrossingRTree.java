@@ -186,6 +186,13 @@ public class BetterEdgeCrossingRTree {
             }
         }
 
+        // clean the rTree from the temporarily created edges
+        for (Edge createdEdge : createdEdges) {
+            Coordinate s = mapVertexToCoordinate.get(createdEdge.getS());
+            Coordinate t = mapVertexToCoordinate.get(createdEdge.getT());
+            this.rTree = this.rTree.delete(createdEdge, Geometries.line(s.getX(), s.getY(), t.getX(), t.getY()));
+        }
+
         // return the number of crossings with the given vertex in the current gamestate
         return crossings;
     }
