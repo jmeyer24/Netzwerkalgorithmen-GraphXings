@@ -132,7 +132,7 @@ public class BetterEdgeCrossingRTree {
             Coordinate t = mapVertexToCoordinate.get(edge.getT());
             // continue, if the edge does not exist yet, e.g. one of the vertices is not
             // placed yet
-            if (s == null | t == null) {
+            if (s == null || t == null) {
                 continue;
             }
 
@@ -150,6 +150,9 @@ public class BetterEdgeCrossingRTree {
         Rectangle rectangle = Geometries.rectangle(x1, y1, x2, y2);
         Iterable<Entry<Edge, Geometry>> search = this.rTree.search(rectangle);
         for (Entry<Edge, Geometry> entry : search) {
+            if (mapVertexToCoordinate.get(entry.value().getS()) == null
+                    || mapVertexToCoordinate.get(entry.value().getT()) == null)
+                continue;
             searchedVertices.add(entry.value().getS());
             searchedVertices.add(entry.value().getT());
         }

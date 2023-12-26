@@ -83,6 +83,9 @@ public class MixingPlayer implements NewPlayer {
      * maximium playing time in nanos
      */
     private long playingTime = 300000000000L;
+
+    private double angleSum = 0;
+    private double numberOfEdges = 0;
     /**
      * The size of the circle to mirror to
      * ranges from 0 (center point) over 1 (this.width/this.height of game board) to
@@ -295,7 +298,7 @@ public class MixingPlayer implements NewPlayer {
                     return getRandomMove();
             }
         } else {
-            return getMinimizingMove(lastMove);
+            return getEdgeDirectionMeanMove(lastMove);
         }
     }
 
@@ -540,6 +543,51 @@ public class MixingPlayer implements NewPlayer {
 
         // fallback: get a minimizing brute force move instead
         return getBruteForceMove(lastMove, false);
+    }
+
+    public GameMove getEdgeDirectionMeanMove(GameMove lastMove) {
+        ArrayList<Vertex> vertices = getUnplacedNeighbors(lastMove.getVertex());
+        if (vertices.isEmpty())
+            return getBruteForceMove(lastMove, false);
+        Vertex vertexToPlace = vertices.get(0);
+        HashMap<Vertex, Coordinate> mapVertexToCoordinate = gs.getVertexCoordinates();
+        Iterable<Edge> edges = g.getIncidentEdges(lastMove.getVertex());
+        for (Edge edge : edges) {
+            Coordinate c1 = mapVertexToCoordinate.get(edge.getS());
+            Coordinate c2 = mapVertexToCoordinate.get(edge.getT());
+            if (c2 == null || c1 == null)
+                continue;
+            double x = Math.abs(c1.getX() - c2.getX());
+            double y = Math.abs(c1.getY() - c2.getY());
+            if (x == 0) {
+                angleSum += Math.PI / 2;
+            } else
+                angleSum += Math.atan(y / x);
+            numberOfEdges++;
+        }
+
+        double meanAngle = 0;
+        if (numberOfEdges != 0)
+            meanAngle = angleSum / numberOfEdges;
+
+        int x = lastMove.getCoordinate().getX();
+        int y = lastMove.getCoordinate().getY();
+        int distance = 1;
+        BoardEdge boardEdge = findClosestBoardEdge(lastMove.getCoordinate().getX(), lastMove.getCoordinate().getY());
+        double angle = boardEdge == BoardEdge.Top || boardEdge == BoardEdge.Right ? meanAngle + Math.PI / 2
+                : meanAngle - Math.PI / 2;
+        while (true) {
+            x = (int) (Math.cos(angle) * distance) + lastMove.getCoordinate().getX();
+            y = (int) (Math.sin(angle) * distance) + lastMove.getCoordinate().getY();
+            if (x < 0 || y < 0 || x >= width || y >= height)
+                return getBruteForceMove(lastMove, false);
+            if (gs.getUsedCoordinates()[x][y] == 0)
+                break;
+            distance++;
+        }
+        if (gs.getUsedCoordinates()[x][y] != 0)
+            return getBruteForceMove(lastMove, false);
+        return new GameMove(vertexToPlace, new Coordinate(x, y));
     }
 
     /**
