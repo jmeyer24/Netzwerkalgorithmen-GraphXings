@@ -34,8 +34,6 @@ public class NewGame {
 	 */
 	private Objective objective;
 
-public class NewGame {
-
 	/**
 	 * @true: Shows gui
 	 * @false: does not show gui
@@ -86,14 +84,14 @@ public class NewGame {
 
 	/**
 	 * Instantiates a game of GraphXings.
-	 * @param g The graph to be drawn.
-	 * @param width The width of the game board.
-	 * @param height The height of the game board.
+	 * 
+	 * @param g       The graph to be drawn.
+	 * @param width   The width of the game board.
+	 * @param height  The height of the game board.
 	 * @param player1 The first player. Plays as the maximizer in round one.
 	 * @param player2 The second player. Plays as the minimizer in round one.
 	 */
-	public NewGame(Graph g, int width, int height, NewPlayer player1, NewPlayer player2)
-	{
+	public NewGame(Graph g, int width, int height, NewPlayer player1, NewPlayer player2) {
 		this.g = g;
 		this.width = width;
 		this.height = height;
@@ -105,11 +103,12 @@ public class NewGame {
 
 	/**
 	 * Instantiates a game of GraphXings.
-	 * @param g The graph to be drawn.
-	 * @param width The width of the game board.
-	 * @param height The height of the game board.
-	 * @param player1 The first player. Plays as the maximizer in round one.
-	 * @param player2 The second player. Plays as the minimizer in round one.
+	 * 
+	 * @param g         The graph to be drawn.
+	 * @param width     The width of the game board.
+	 * @param height    The height of the game board.
+	 * @param player1   The first player. Plays as the maximizer in round one.
+	 * @param player2   The second player. Plays as the minimizer in round one.
 	 * @param timeLimit The time limit for players.
 	 */
 	public NewGame(Graph g, int width, int height, NewPlayer player1, NewPlayer player2, long timeLimit) {
@@ -124,16 +123,17 @@ public class NewGame {
 
 	/**
 	 * Instantiates a game of GraphXings.
-	 * @param g The graph to be drawn.
-	 * @param width The width of the game board.
-	 * @param height The height of the game board.
-	 * @param player1 The first player. Plays as the maximizer in round one.
-	 * @param player2 The second player. Plays as the minimizer in round one.
+	 * 
+	 * @param g         The graph to be drawn.
+	 * @param width     The width of the game board.
+	 * @param height    The height of the game board.
+	 * @param player1   The first player. Plays as the maximizer in round one.
+	 * @param player2   The second player. Plays as the minimizer in round one.
 	 * @param timeLimit The time limit for players.
 	 * @param objective The objective of the current game.
 	 */
-	public NewGame(Graph g, int width, int height, NewPlayer player1, NewPlayer player2, Objective objective, long timeLimit)
-	{
+	public NewGame(Graph g, int width, int height, NewPlayer player1, NewPlayer player2, Objective objective,
+			long timeLimit) {
 		this.g = g;
 		this.width = width;
 		this.height = height;
@@ -170,7 +170,7 @@ public class NewGame {
 			graphPanel.changeReadyState(false);
 		}
 		try {
-			int crossingsGame1 = playRound(player1, player2);
+			double crossingsGame1 = playRound(player1, player2);
 			// Between Games
 			if (showGui) {
 				try {
@@ -185,37 +185,26 @@ public class NewGame {
 				}
 				graphPanel.changeReadyState(false);
 			}
-			int crossingsGame2 = playRound(player2, player1);
-			return new NewGameResult(crossingsGame1, crossingsGame2, player1, player2, false, false, false, false);
+			double crossingsGame2 = playRound(player2, player1);
+			return new NewGameResult(crossingsGame1, crossingsGame2, player1, player2, false, false, false, false,
+					objective);
 		} catch (NewInvalidMoveException ex) {
 			System.out.println("E001:" + ex.getCheater().getName() + " cheated!");
-			if (ex.getCheater().equals(player1))
-			{
-				return new NewGameResult(0, 0, player1, player2,true,false,false,false, objective);
+			if (ex.getCheater().equals(player1)) {
+				return new NewGameResult(0, 0, player1, player2, true, false, false, false, objective);
+			} else if (ex.getCheater().equals(player2)) {
+				return new NewGameResult(0, 0, player1, player2, false, true, false, false, objective);
+			} else {
+				return new NewGameResult(0, 0, player1, player2, false, false, false, false, objective);
 			}
-			else if (ex.getCheater().equals(player2))
-			{
-				return new NewGameResult(0,0,player1,player2,false,true,false,false, objective);
-			}
-			else
-			{
-				return new NewGameResult(0,0,player1,player2,false,false,false,false, objective);
-			}
-		}
-		catch (NewTimeOutException ex)
-		{
-			System.out.println("E002:" +ex.getTimeOutPlayer().getName() + " ran out of time!");
-			if (ex.getTimeOutPlayer().equals(player1))
-			{
-				return new NewGameResult(0, 0, player1, player2,false,false,true,false, objective);
-			}
-			else if (ex.getTimeOutPlayer().equals(player2))
-			{
-				return new NewGameResult(0,0,player1,player2,false,false,false,true, objective);
-			}
-			else
-			{
-				return new NewGameResult(0,0,player1,player2,false,false,false,false, objective);
+		} catch (NewTimeOutException ex) {
+			System.out.println("E002:" + ex.getTimeOutPlayer().getName() + " ran out of time!");
+			if (ex.getTimeOutPlayer().equals(player1)) {
+				return new NewGameResult(0, 0, player1, player2, false, false, true, false, objective);
+			} else if (ex.getTimeOutPlayer().equals(player2)) {
+				return new NewGameResult(0, 0, player1, player2, false, false, false, true, objective);
+			} else {
+				return new NewGameResult(0, 0, player1, player2, false, false, false, false, objective);
 			}
 
 		}
@@ -230,8 +219,8 @@ public class NewGame {
 	 * @return The score yielded by the final drawing.
 	 * @throws InvalidMoveException An exception caused by cheating.
 	 */
-	private double playRound(NewPlayer maximizer, NewPlayer minimizer) throws NewInvalidMoveException, NewTimeOutException
-	{
+	private double playRound(NewPlayer maximizer, NewPlayer minimizer)
+			throws NewInvalidMoveException, NewTimeOutException {
 		int turn = 0;
 		GameState gs = new GameState(g, width, height);
 		GameMove lastMove = null;
@@ -240,47 +229,36 @@ public class NewGame {
 		long initStartTimeMax = System.nanoTime();
 		NewPlayer.Role maximizerRole;
 		NewPlayer.Role minimizerRole;
-		if (objective.equals(Objective.CROSSING_NUMBER))
-		{
+		if (objective.equals(Objective.CROSSING_NUMBER)) {
 			maximizerRole = NewPlayer.Role.MAX;
 			minimizerRole = NewPlayer.Role.MIN;
-		}
-		else
-		{
+		} else {
 			maximizerRole = NewPlayer.Role.MAX_ANGLE;
 			minimizerRole = NewPlayer.Role.MIN_ANGLE;
 		}
-		maximizer.initializeNextRound(g.copy(),width,height, maximizerRole);
-		timeMaximizer += System.nanoTime()-initStartTimeMax;
-		if (timeMaximizer > timeLimit)
-		{
+		maximizer.initializeNextRound(g.copy(), width, height, maximizerRole);
+		timeMaximizer += System.nanoTime() - initStartTimeMax;
+		if (timeMaximizer > timeLimit) {
 			throw new NewTimeOutException(maximizer);
 		}
 		long initStartTimeMin = System.nanoTime();
-		minimizer.initializeNextRound(g.copy(),width,height, minimizerRole);
-		timeMinimizer += System.nanoTime()-initStartTimeMin;
-		if (timeMinimizer > timeLimit)
-		{
+		minimizer.initializeNextRound(g.copy(), width, height, minimizerRole);
+		timeMinimizer += System.nanoTime() - initStartTimeMin;
+		if (timeMinimizer > timeLimit) {
 			throw new NewTimeOutException(minimizer);
 		}
 		while (turn < g.getN()) {
 			GameMove newMove;
 			if (turn % 2 == 0) {
 				long moveStartTime = System.nanoTime();
-				try
-				{
-					if (objective.equals(Objective.CROSSING_NUMBER))
-					{
+				try {
+					if (objective.equals(Objective.CROSSING_NUMBER)) {
 						newMove = maximizer.maximizeCrossings(lastMove);
-					}
-					else
-					{
+					} else {
 						newMove = maximizer.maximizeCrossingAngles(lastMove);
 					}
-				}
-				catch (Exception ex)
-				{
-					System.out.println("E003:" +maximizer.getName() + " threw a " + ex.getClass() + " exception!");
+				} catch (Exception ex) {
+					System.out.println("E003:" + maximizer.getName() + " threw a " + ex.getClass() + " exception!");
 					throw new NewInvalidMoveException(maximizer);
 				}
 				timeMaximizer += System.nanoTime() - moveStartTime;
@@ -292,20 +270,14 @@ public class NewGame {
 				}
 			} else {
 				long moveStartTime = System.nanoTime();
-				try
-				{
-					if (objective.equals(Objective.CROSSING_NUMBER))
-					{
+				try {
+					if (objective.equals(Objective.CROSSING_NUMBER)) {
 						newMove = minimizer.minimizeCrossings(lastMove);
-					}
-					else
-					{
+					} else {
 						newMove = minimizer.minimizeCrossingAngles(lastMove);
 					}
-				}
-				catch (Exception ex)
-				{
-					System.out.println("E004:" +minimizer.getName() + " threw a " + ex.getClass() + " exception!" );
+				} catch (Exception ex) {
+					System.out.println("E004:" + minimizer.getName() + " threw a " + ex.getClass() + " exception!");
 					throw new NewInvalidMoveException(minimizer);
 				}
 				timeMinimizer += System.nanoTime() - moveStartTime;
@@ -344,13 +316,10 @@ public class NewGame {
 		if (showGui == true) {
 			graphPanel.changeReadyState(true);
 		}
-		CrossingCalculator cc = new CrossingCalculator(g,gs.getVertexCoordinates());
-		if (objective.equals(Objective.CROSSING_NUMBER))
-		{
+		CrossingCalculator cc = new CrossingCalculator(g, gs.getVertexCoordinates());
+		if (objective.equals(Objective.CROSSING_NUMBER)) {
 			return cc.computeCrossingNumber();
-		}
-		else
-		{
+		} else {
 			return cc.computeSumOfSquaredCosinesOfCrossingAngles();
 		}
 	}

@@ -142,6 +142,17 @@ public class MixingPlayer implements NewPlayer {
         return makeMove(lastMove, false);
     }
 
+    // TODO: do both of those angle optimization strategies!!!
+    @Override
+    public GameMove maximizeCrossingAngles(GameMove lastMove) {
+        return makeMove(lastMove, true);
+    }
+
+    @Override
+    public GameMove minimizeCrossingAngles(GameMove lastMove) {
+        return makeMove(lastMove, false);
+    }
+
     public void addToHeatmap(Coordinate coordinate) {
         int heatMapX = (int) ((double) coordinate.getX() / width * heatMapSize);
         int heatMapY = (int) ((double) coordinate.getY() / height * heatMapSize);
