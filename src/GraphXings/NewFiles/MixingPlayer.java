@@ -545,13 +545,9 @@ public class MixingPlayer implements NewPlayer {
         return getBruteForceMove(lastMove, false);
     }
 
-    public GameMove getEdgeDirectionMeanMove(GameMove lastMove) {
-        ArrayList<Vertex> vertices = getUnplacedNeighbors(lastMove.getVertex());
-        if (vertices.isEmpty())
-            return getBruteForceMove(lastMove, false);
-        Vertex vertexToPlace = vertices.get(0);
+    public void addToMeanAngle(Vertex vertex) {
+        Iterable<Edge> edges = g.getIncidentEdges(vertex);
         HashMap<Vertex, Coordinate> mapVertexToCoordinate = gs.getVertexCoordinates();
-        Iterable<Edge> edges = g.getIncidentEdges(lastMove.getVertex());
         for (Edge edge : edges) {
             Coordinate c1 = mapVertexToCoordinate.get(edge.getS());
             Coordinate c2 = mapVertexToCoordinate.get(edge.getT());
@@ -565,6 +561,18 @@ public class MixingPlayer implements NewPlayer {
                 angleSum += Math.atan(y / x);
             numberOfEdges++;
         }
+    }
+
+    public GameMove getEdgeDirectionMeanMove(GameMove lastMove) {
+        Vertex lastPlacedVertex = lastMove.getVertex();
+        addToMeanAngle(lastPlacedVertex);
+        ArrayList<Vertex> vertices = getUnplacedNeighbors(lastPlacedVertex);
+        if (vertices.isEmpty()) {
+            GameMove bruteForceMove = getBruteForceMove(lastMove, false);
+            addToMeanAngle(bruteForceMove.getVertex());
+            return bruteForceMove;
+        }
+        Vertex vertexToPlace = vertices.get(0);
 
         double meanAngle = 0;
         if (numberOfEdges != 0)
@@ -579,14 +587,20 @@ public class MixingPlayer implements NewPlayer {
         while (true) {
             x = (int) (Math.cos(angle) * distance) + lastMove.getCoordinate().getX();
             y = (int) (Math.sin(angle) * distance) + lastMove.getCoordinate().getY();
-            if (x < 0 || y < 0 || x >= width || y >= height)
-                return getBruteForceMove(lastMove, false);
+            if (x < 0 || y < 0 || x >= width || y >= height) {
+                GameMove bruteForceMove = getBruteForceMove(lastMove, false);
+                addToMeanAngle(bruteForceMove.getVertex());
+                return bruteForceMove;
+            }
             if (gs.getUsedCoordinates()[x][y] == 0)
                 break;
             distance++;
         }
-        if (gs.getUsedCoordinates()[x][y] != 0)
-            return getBruteForceMove(lastMove, false);
+        if (gs.getUsedCoordinates()[x][y] != 0) {
+            GameMove bruteForceMove = getBruteForceMove(lastMove, false);
+            addToMeanAngle(bruteForceMove.getVertex());
+            return bruteForceMove;
+        }
         return new GameMove(vertexToPlace, new Coordinate(x, y));
     }
 
