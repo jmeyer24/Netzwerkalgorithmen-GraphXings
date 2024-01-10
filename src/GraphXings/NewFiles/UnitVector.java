@@ -1,6 +1,5 @@
 package GraphXings.NewFiles;
 
-// TODO: make this via the Rational class, but there we got no sqrt...
 public class UnitVector {
     private double x;
     private double y;

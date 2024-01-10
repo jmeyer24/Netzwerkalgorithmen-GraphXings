@@ -32,7 +32,6 @@ public class GraphXings {
             e.printStackTrace();
         }
 
-        // TODO: add players here
         ArrayList<NewPlayer> players = new ArrayList<>();
         ConfigParameterOptimization config = new ConfigParameterOptimization();
         // this instead gives us one single MixingPlayer with standard values
