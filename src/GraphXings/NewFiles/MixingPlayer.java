@@ -159,6 +159,17 @@ public class MixingPlayer implements NewPlayer {
         return makeMove(lastMove, false);
     }
 
+    // TODO: do both of those angle optimization strategies!!!
+    @Override
+    public GameMove maximizeCrossingAngles(GameMove lastMove) {
+        return makeMove(lastMove, true);
+    }
+
+    @Override
+    public GameMove minimizeCrossingAngles(GameMove lastMove) {
+        return makeMove(lastMove, false);
+    }
+
     @Override
     public void initializeNextRound(Graph g, int width, int height, Role role) {
         this.g = g;
@@ -871,6 +882,14 @@ public class MixingPlayer implements NewPlayer {
         return new GameMove(v, getNearestFreeCoordinate(getCoordinateClampedToBoard(x, y)));
     }
 
+    /**
+     * Return a valid game move by placing in the upper left or bottom right corner
+     * to keep crossing angles small
+     * 
+     * @param lastMove the last move made by the opponent, {@code null} if it is
+     *                 the first move of the game.
+     * @return a valid game move
+     */
     public GameMove getRadialStuffMove(GameMove lastMove) {
         int fieldPercentage = 10;
         Vertex vertexToPlace = null;
@@ -1062,6 +1081,7 @@ public class MixingPlayer implements NewPlayer {
      * @param AnnealingReverse first BruteForce then Mirroring, {@code percentage}
      *                         gives the percentage of BruteForce over the whole
      *                         game
+     * @param RadialStuff      only RadialStuff
      */
     public enum Strategy {
         BruteForce, Mirroring, Percentage, Annealing, AnnealingReverse, RadialStuff;
