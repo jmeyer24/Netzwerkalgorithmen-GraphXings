@@ -86,6 +86,10 @@ public class MixingPlayer implements NewPlayer {
 
     private double angleSum = 0;
     private double numberOfEdges = 0;
+
+    private int indexToPlaceVertex = 0;
+
+    private GameMove lastOwnMove = null;
     /**
      * The size of the circle to mirror to
      * ranges from 0 (center point) over 1 (this.width/this.height of game board) to
@@ -109,7 +113,7 @@ public class MixingPlayer implements NewPlayer {
         this.vertexSampleSize = 1;
         this.percentage = 0.93;
         this.relativeCircleSize = 0.5;
-        this.strategy = Strategy.Mirroring;
+        this.strategy = Strategy.RadialStuff;
         this.r = new Random(this.name.hashCode());
     }
 
@@ -224,6 +228,7 @@ public class MixingPlayer implements NewPlayer {
         this.betterEdgeCrossingRTree.insertVertex(newMove.getVertex());
 
         // Finally: Return the new move
+        lastOwnMove = newMove;
         return newMove;
     }
 
@@ -294,6 +299,8 @@ public class MixingPlayer implements NewPlayer {
                     } else {
                         return getMirroringMove(lastMove);
                     }
+                case RadialStuff:
+                    return getRadialStuffMove(lastMove);
                 default:
                     return getRandomMove();
             }
@@ -864,6 +871,49 @@ public class MixingPlayer implements NewPlayer {
         return new GameMove(v, getNearestFreeCoordinate(getCoordinateClampedToBoard(x, y)));
     }
 
+    public GameMove getRadialStuffMove(GameMove lastMove) {
+        int fieldPercentage = 10;
+        Vertex vertexToPlace = null;
+        int x = 0;
+        int y = 0;
+        while (true) {
+            x = indexToPlaceVertex % (width / fieldPercentage);
+            y = indexToPlaceVertex / (width / fieldPercentage);
+            if (indexToPlaceVertex % 2 == 1) {
+                x = (width - 1) - x;
+                y = (height - 1) - y;
+            }
+            if (gs.getUsedCoordinates()[x][y] == 0)
+                break;
+            indexToPlaceVertex += 2;
+        }
+        if (lastMove != null) {
+            Coordinate lastMoveCoordinate = lastMove.getCoordinate();
+            if (((lastMoveCoordinate.getX() < width / 10) && (lastMoveCoordinate.getY() < height / 10))
+                    || (lastMoveCoordinate.getX() > (width - width / 10))
+                            && lastMoveCoordinate.getY() > (height - height / 10)) {
+                ArrayList<Vertex> unplacedNeighbors = getUnplacedNeighbors(lastMove.getVertex());
+                if (!unplacedNeighbors.isEmpty())
+                    vertexToPlace = unplacedNeighbors.get(0);
+            }
+        }
+        if (vertexToPlace == null && lastOwnMove != null) {
+            ArrayList<Vertex> unplacedNeighbors = getUnplacedNeighbors(lastOwnMove.getVertex());
+            if (!unplacedNeighbors.isEmpty())
+                vertexToPlace = unplacedNeighbors.get(0);
+        }
+        if (vertexToPlace == null) {
+            for (Vertex v_ : this.g.getVertices()) {
+                if (!gs.getPlacedVertices().contains(v_)) {
+                    vertexToPlace = v_;
+                    break;
+                }
+            }
+        }
+        indexToPlaceVertex++;
+        return new GameMove(vertexToPlace, new Coordinate(x, y));
+    }
+
     /**
      * Return a list of unplaced neighbors.
      * 
@@ -1014,7 +1064,7 @@ public class MixingPlayer implements NewPlayer {
      *                         game
      */
     public enum Strategy {
-        BruteForce, Mirroring, Percentage, Annealing, AnnealingReverse;
+        BruteForce, Mirroring, Percentage, Annealing, AnnealingReverse, RadialStuff;
     };
 
     /**

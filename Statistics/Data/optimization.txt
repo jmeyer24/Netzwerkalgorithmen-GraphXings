@@ -1,0 +1,11 @@
+Graph_Dracula_Mirroring_0.0_0.475_25_0 beats Graph_Dracula_Annealing_0.85_0.475_25_1 with 2304:1951 crossings!
+Graph_Dracula_Mirroring_0.0_0.475_25_0 beats Graph_Dracula_Annealing_0.9_0.475_25_1 with 4773:4254 crossings!
+Graph_Dracula_Annealing_0.9_0.475_25_1 beats Graph_Dracula_Annealing_0.85_0.475_25_1 with 95:90 crossings!
+Graph_Dracula_Annealing_0.93_0.5_30_3 beats RandomPlayer with 4095:1331 crossings!
+Graph_Dracula attempted an invalid move. beppo wins!
+Graph_Dracula attempted an invalid move. beppo wins!
+Graph_Dracula attempted an invalid move. beppo wins!
+Graph_Dracula beats beppo with 1403:3372 crossings!
+Graph_Dracula beats beppo with 3873:1198 crossings!
+Graph_Dracula beats beppo with 3873:1198 crossings!
+Graph_Dracula beats Graph_Dracula with 2400:2600 crossings!
