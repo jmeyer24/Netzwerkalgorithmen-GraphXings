@@ -308,11 +308,7 @@ public class MixingPlayer implements NewPlayer {
                     return getRandomMove();
             }
         } else {
-<<<<<<< Updated upstream
-            return getMinimizingMove(lastMove);
-=======
             return getEdgeDirectionMeanMove(lastMove);
->>>>>>> Stashed changes
         }
     }
 
@@ -559,8 +555,6 @@ public class MixingPlayer implements NewPlayer {
         return getBruteForceMove(lastMove, false);
     }
 
-<<<<<<< Updated upstream
-=======
     public void addToMeanAngle(Vertex vertex) {
         Iterable<Edge> edges = g.getIncidentEdges(vertex);
         HashMap<Vertex, Coordinate> mapVertexToCoordinate = gs.getVertexCoordinates();
@@ -620,7 +614,6 @@ public class MixingPlayer implements NewPlayer {
         return new GameMove(vertexToPlace, new Coordinate(x, y));
     }
 
->>>>>>> Stashed changes
     /**
      * Return the {@code enum BoardEdge} closest to the input position.
      * 
@@ -763,11 +756,7 @@ public class MixingPlayer implements NewPlayer {
             for (Vertex vertexToSample : verticesToSample) {
                 // Add vertex sampling here
                 Coordinate coordinateToAdd = new Coordinate(xPositions.get(sample), yPositions.get(sample));
-<<<<<<< Updated upstream
-                int crossingsAddedByVertex = this.betterEdgeCrossingRTree.testCoordinate(vertexToSample,
-=======
                 double crossingsAddedByVertex = this.betterEdgeCrossingRTree.testCoordinate(vertexToSample,
->>>>>>> Stashed changes
                         coordinateToAdd,
                         gs.getVertexCoordinates());
                 // ??????? Error wenn mehr als ein Vertex abgefragt wird.
