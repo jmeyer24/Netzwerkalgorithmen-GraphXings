@@ -118,13 +118,13 @@ public class PlanarGameInstanceFactory implements GameInstanceFactory {
 		g.addVertex(v2);
 		g.addVertex(v3);
 		d.addVertex(t1);
-		if (r.nextDouble(1) < prob || !randomEdge) {
+		if (r.nextDouble() < prob || !randomEdge) {
 			g.addEdge(new Edge(v1, v2));
 		}
-		if (r.nextDouble(1) < prob || !randomEdge) {
+		if (r.nextDouble() < prob || !randomEdge) {
 			g.addEdge(new Edge(v2, v3));
 		}
-		if (r.nextDouble(1) < prob || !randomEdge) {
+		if (r.nextDouble() < prob || !randomEdge) {
 			g.addEdge(new Edge(v3, v1));
 		}
 		outerface.add(v1);
@@ -150,7 +150,7 @@ public class PlanarGameInstanceFactory implements GameInstanceFactory {
 				newOuterface.add(outerface.get(i));
 			}
 			for (int i = p; i <= q; i++) {
-				if (r.nextDouble(1) < prob || !randomEdge) {
+				if (r.nextDouble() < prob || !randomEdge) {
 					g.addEdge(new Edge(vk, outerface.get(i)));
 				}
 			}
@@ -192,7 +192,7 @@ public class PlanarGameInstanceFactory implements GameInstanceFactory {
 		Vertex vn = new Vertex("v" + n);
 		g.addVertex(vn);
 		for (int i = 0; i < outerface.size(); i++) {
-			if (r.nextDouble(1) < prob || !randomEdge) {
+			if (r.nextDouble() < prob || !randomEdge) {
 				g.addEdge(new Edge(vn, outerface.get(i)));
 			}
 		}

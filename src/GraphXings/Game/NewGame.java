@@ -38,7 +38,7 @@ public class NewGame {
 	 * @true: Shows gui
 	 * @false: does not show gui
 	 */
-	private boolean showGui = false;
+	private boolean showGui = true;
 
 	/**
 	 * @true: a pause between each vertex placement

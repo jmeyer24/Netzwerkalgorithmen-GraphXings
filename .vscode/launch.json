@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "TestingGraphXings",
+            "request": "launch",
+            "mainClass": "GraphXings.TestingGraphXings",
+            "projectName": "Netzwerkalgorithmen-GraphXings_84d62ba7"
+        },
+        {
+            "type": "java",
             "name": "GraphXings",
             "request": "launch",
             "mainClass": "GraphXings.GraphXings",
@@ -16,6 +23,6 @@
             "name": "Current File",
             "request": "launch",
             "mainClass": "${file}"
-        },
+        }
     ]
 }
