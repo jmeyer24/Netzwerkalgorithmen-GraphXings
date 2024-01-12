@@ -1,16 +1,11 @@
 package GraphXings;
 
 import GraphXings.Algorithms.NewPlayer;
-import GraphXings.Algorithms.NewRandomPlayer;
 import GraphXings.Game.GameInstance.PlanarGameInstanceFactory;
 import GraphXings.Game.League.NewLeague;
 import GraphXings.Game.League.NewLeagueResult;
 import GraphXings.NewFiles.MixingPlayer;
-import GraphXings.NewFiles.ConfigParameterOptimization;
-import GraphXings.NewFiles.MixingPlayer.Strategy;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 
 public class TestingGraphXings {

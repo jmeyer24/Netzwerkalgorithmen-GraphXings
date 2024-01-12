@@ -38,7 +38,7 @@ public class NewGame {
 	 * @true: Shows gui
 	 * @false: does not show gui
 	 */
-	private boolean showGui = true;
+	private boolean showGui = false;
 
 	/**
 	 * @true: a pause between each vertex placement
@@ -46,7 +46,7 @@ public class NewGame {
 	 */
 	private boolean timerOn = true;
 	private int sleepTimer = 0; // in miliseconds
-	private int pauseBetweenGames = 5000; // in milis
+	private int pauseBetweenGames = 10000; // in milis
 	/**
 	 * @true: shows edges in gui
 	 * @false: does not show edges in gui
