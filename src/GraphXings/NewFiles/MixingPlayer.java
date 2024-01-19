@@ -64,9 +64,9 @@ public class MixingPlayer implements NewPlayer {
     private double percentage;
     /**
      * Minimizer builds a tree, these are the open endpoints of this tree where we
-     * can add an edge
+     * can add an edge, this is also being used in the radial stuff maximizer
      */
-    private ArrayList<Vertex> openTreeEndpoints = new ArrayList<>();
+    private ArrayList<Vertex> openEndpoints = new ArrayList<>();
     /**
      * The id of a vertex mapped to its vertex object
      */
@@ -394,12 +394,12 @@ public class MixingPlayer implements NewPlayer {
         if (maxY > this.height)
             maxY = this.height;
 
-        if (!this.openTreeEndpoints.isEmpty()) {
+        if (!this.openEndpoints.isEmpty()) {
             // System.out.println("lastOwnMove != null");
             ArrayList<Vertex> unplacedNeighbors = new ArrayList<>();
             Vertex referenceVertex = null;
             ArrayList<Vertex> usedUpVertices = new ArrayList<>();
-            for (Vertex referenceVertex_ : this.openTreeEndpoints) {
+            for (Vertex referenceVertex_ : this.openEndpoints) {
                 unplacedNeighbors = getUnplacedNeighbors(referenceVertex_);
                 if (!unplacedNeighbors.isEmpty()) {
                     referenceVertex = referenceVertex_;
@@ -409,7 +409,7 @@ public class MixingPlayer implements NewPlayer {
                 }
             }
             for (Vertex vertexToRemove : usedUpVertices) {
-                this.openTreeEndpoints.remove(vertexToRemove);
+                this.openEndpoints.remove(vertexToRemove);
             }
             if (!unplacedNeighbors.isEmpty()) {
                 vertexToPlace = unplacedNeighbors.get(unplacedNeighbors.size() - 1);
@@ -554,7 +554,7 @@ public class MixingPlayer implements NewPlayer {
             }
         }
         if (newMove != null && vertexToPlace != null) {
-            this.openTreeEndpoints.add(vertexToPlace);
+            this.openEndpoints.add(vertexToPlace);
             return newMove;
         }
 
@@ -896,19 +896,19 @@ public class MixingPlayer implements NewPlayer {
             int x = 0;
             int y = 0;
             while (true) {
-                x = indexToPlaceVertex % (int)Math.ceil((double)width / fieldPercentage);
-                y = indexToPlaceVertex / (int)Math.ceil((double)width / fieldPercentage);
-    
+                x = indexToPlaceVertex % (int) Math.ceil((double) width / fieldPercentage);
+                y = indexToPlaceVertex / (int) Math.ceil((double) width / fieldPercentage);
+
                 if (indexToPlaceVertex % 2 == 1) {
                     x = (width - 1) - x;
                     y = (height - 1) - y;
-    
+
                 }
                 if (gs.getUsedCoordinates()[x][y] == 0)
                     break;
                 indexToPlaceVertex += 2;
             }
-            if (lastMove != null) {
+            if (lastMove != null) {// Steal neighbor if they placed within our area
                 Coordinate lastMoveCoordinate = lastMove.getCoordinate();
                 if (((lastMoveCoordinate.getX() < width / 10) && (lastMoveCoordinate.getY() < height / 10))
                         || (lastMoveCoordinate.getX() > (width - width / 10))
@@ -918,12 +918,23 @@ public class MixingPlayer implements NewPlayer {
                         vertexToPlace = unplacedNeighbors.get(0);
                 }
             }
-            if (vertexToPlace == null && lastOwnMove != null) {
-                ArrayList<Vertex> unplacedNeighbors = getUnplacedNeighbors(lastOwnMove.getVertex());
+            if (vertexToPlace == null) {// use open tree endpoint if possible
+                ArrayList<Vertex> unplacedNeighbors = new ArrayList<>();
+                ArrayList<Vertex> usedUpVertices = new ArrayList<>();
+                for (Vertex referenceVertex_ : this.openEndpoints) {
+                    ArrayList<Vertex> unplacedNeighbors_ = getUnplacedNeighbors(referenceVertex_);
+                    if (unplacedNeighbors_.isEmpty()) {
+                        usedUpVertices.add(referenceVertex_);
+                    } else
+                        unplacedNeighbors.addAll(unplacedNeighbors_);
+                }
+                for (Vertex vertexToRemove : usedUpVertices) {
+                    this.openEndpoints.remove(vertexToRemove);
+                }
                 if (!unplacedNeighbors.isEmpty())
-                    vertexToPlace = unplacedNeighbors.get(0);
+                    vertexToPlace = unplacedNeighbors.get(unplacedNeighbors.size() - 1);
             }
-            if (vertexToPlace == null) {
+            if (vertexToPlace == null) { // if there is still no vertex just use anyone
                 for (Vertex v_ : this.g.getVertices()) {
                     if (!gs.getPlacedVertices().contains(v_)) {
                         vertexToPlace = v_;
@@ -932,10 +943,13 @@ public class MixingPlayer implements NewPlayer {
                 }
             }
             indexToPlaceVertex++;
+            if (vertexToPlace != null) {
+                this.openEndpoints.add(vertexToPlace);
+            }
             return new GameMove(vertexToPlace, new Coordinate(x, y));
         } catch (Exception e) {
             return getBruteForceMove(lastMove, true);
-        } 
+        }
     }
 
     /**
