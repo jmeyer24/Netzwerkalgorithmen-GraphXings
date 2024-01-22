@@ -891,28 +891,37 @@ public class MixingPlayer implements NewPlayer {
      */
     public GameMove getRadialStuffMove(GameMove lastMove) {
         try {
-            int fieldPercentage = 10;
+            int fieldPercentage = 17;
             Vertex vertexToPlace = null;
             int x = 0;
             int y = 0;
+
+            
             while (true) {
-                x = indexToPlaceVertex % (int) Math.ceil((double) width / fieldPercentage);
-                y = indexToPlaceVertex / (int) Math.ceil((double) width / fieldPercentage);
+
+                if(height < width) {
+                    x = indexToPlaceVertex % (width / fieldPercentage);
+                    y = indexToPlaceVertex / (width / fieldPercentage);
+                } else {
+                    x = indexToPlaceVertex / (width / fieldPercentage);
+                    y = indexToPlaceVertex % (width / fieldPercentage);
+                }
+   
 
                 if (indexToPlaceVertex % 2 == 1) {
                     x = (width - 1) - x;
                     y = (height - 1) - y;
-
                 }
                 if (gs.getUsedCoordinates()[x][y] == 0)
                     break;
-                indexToPlaceVertex += 2;
+                indexToPlaceVertex++; 
             }
+
             if (lastMove != null) {// Steal neighbor if they placed within our area
                 Coordinate lastMoveCoordinate = lastMove.getCoordinate();
                 if (((lastMoveCoordinate.getX() < width / 10) && (lastMoveCoordinate.getY() < height / 10))
-                        || (lastMoveCoordinate.getX() > (width - width / 10))
-                                && lastMoveCoordinate.getY() > (height - height / 10)) {
+                || ((lastMoveCoordinate.getX() > (width - width / 10))
+                && (lastMoveCoordinate.getY() > (height - height / 10)))) {
                     ArrayList<Vertex> unplacedNeighbors = getUnplacedNeighbors(lastMove.getVertex());
                     if (!unplacedNeighbors.isEmpty())
                         vertexToPlace = unplacedNeighbors.get(0);
@@ -946,6 +955,7 @@ public class MixingPlayer implements NewPlayer {
             if (vertexToPlace != null) {
                 this.openEndpoints.add(vertexToPlace);
             }
+
             return new GameMove(vertexToPlace, new Coordinate(x, y));
         } catch (Exception e) {
             return getBruteForceMove(lastMove, true);
