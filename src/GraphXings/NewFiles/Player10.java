@@ -17,7 +17,7 @@ import GraphXings.Data.*;
 /**
  * A player performing random moves.
  */
-public class MixingPlayer implements NewPlayer {
+public class Player10 implements NewPlayer {
     /* ---------------- attributes -------------- */
     /**
      * The name of the Good palyer
@@ -86,10 +86,6 @@ public class MixingPlayer implements NewPlayer {
 
     private double angleSum = 0;
     private double numberOfEdges = 0;
-
-    private int indexToPlaceVertex = 0;
-
-    private GameMove lastOwnMove = null;
     /**
      * The size of the circle to mirror to
      * ranges from 0 (center point) over 1 (this.width/this.height of game board) to
@@ -105,20 +101,20 @@ public class MixingPlayer implements NewPlayer {
 
     /* ---------------- constructor -------------- */
     /**
-     * The default constructor for {@code MixingPlayer}
+     * The default constructor for {@code Player10}
      */
-    public MixingPlayer() {
-        this.name = "Graph_Dracula";
+    public Player10() {
+        this.name = "Player10";
         this.sampleSize = 30;
         this.vertexSampleSize = 1;
         this.percentage = 0.93;
         this.relativeCircleSize = 0.5;
-        this.strategy = Strategy.RadialStuff;
+        this.strategy = Strategy.Mirroring;
         this.r = new Random(this.name.hashCode());
     }
 
     /**
-     * Constructs a {@code MixingPlayer} with the specified initial attribute
+     * Constructs a {@code Player10} with the specified initial attribute
      * values. A name is chosen from these attributes. The Random object uses this
      * name hashed as seed.
      *
@@ -133,7 +129,7 @@ public class MixingPlayer implements NewPlayer {
      *                           player game move
      * @param strategy           the {@link Strategy} we choose
      */
-    public MixingPlayer(double percentage, double relativeCircleSize, int sampleSize, int vertexSampleSize,
+    public Player10(double percentage, double relativeCircleSize, int sampleSize, int vertexSampleSize,
             Strategy strategy) {
         // optimizable parameters
         this.percentage = percentage;
@@ -143,7 +139,7 @@ public class MixingPlayer implements NewPlayer {
         this.strategy = strategy;
 
         // fixed attributes
-        this.name = "Graph_Dracula_" + strategy + "_" + percentage + "_" + relativeCircleSize + "_" + sampleSize + "_"
+        this.name = "Player10_" + strategy + "_" + percentage + "_" + relativeCircleSize + "_" + sampleSize + "_"
                 + vertexSampleSize;
         this.r = new Random(this.name.hashCode());
     }
@@ -238,7 +234,6 @@ public class MixingPlayer implements NewPlayer {
         this.betterEdgeCrossingRTree.insertVertex(newMove.getVertex());
 
         // Finally: Return the new move
-        lastOwnMove = newMove;
         return newMove;
     }
 
@@ -309,8 +304,6 @@ public class MixingPlayer implements NewPlayer {
                     } else {
                         return getMirroringMove(lastMove);
                     }
-                case RadialStuff:
-                    return getRadialStuffMove(lastMove);
                 default:
                     return getRandomMove();
             }
@@ -882,57 +875,6 @@ public class MixingPlayer implements NewPlayer {
     }
 
     /**
-     * Return a valid game move by placing in the upper left or bottom right corner
-     * to keep crossing angles small
-     * 
-     * @param lastMove the last move made by the opponent, {@code null} if it is
-     *                 the first move of the game.
-     * @return a valid game move
-     */
-    public GameMove getRadialStuffMove(GameMove lastMove) {
-        int fieldPercentage = 10;
-        Vertex vertexToPlace = null;
-        int x = 0;
-        int y = 0;
-        while (true) {
-            x = indexToPlaceVertex % (width / fieldPercentage);
-            y = indexToPlaceVertex / (width / fieldPercentage);
-            if (indexToPlaceVertex % 2 == 1) {
-                x = (width - 1) - x;
-                y = (height - 1) - y;
-            }
-            if (gs.getUsedCoordinates()[x][y] == 0)
-                break;
-            indexToPlaceVertex += 2;
-        }
-        if (lastMove != null) {
-            Coordinate lastMoveCoordinate = lastMove.getCoordinate();
-            if (((lastMoveCoordinate.getX() < width / 10) && (lastMoveCoordinate.getY() < height / 10))
-                    || (lastMoveCoordinate.getX() > (width - width / 10))
-                            && lastMoveCoordinate.getY() > (height - height / 10)) {
-                ArrayList<Vertex> unplacedNeighbors = getUnplacedNeighbors(lastMove.getVertex());
-                if (!unplacedNeighbors.isEmpty())
-                    vertexToPlace = unplacedNeighbors.get(0);
-            }
-        }
-        if (vertexToPlace == null && lastOwnMove != null) {
-            ArrayList<Vertex> unplacedNeighbors = getUnplacedNeighbors(lastOwnMove.getVertex());
-            if (!unplacedNeighbors.isEmpty())
-                vertexToPlace = unplacedNeighbors.get(0);
-        }
-        if (vertexToPlace == null) {
-            for (Vertex v_ : this.g.getVertices()) {
-                if (!gs.getPlacedVertices().contains(v_)) {
-                    vertexToPlace = v_;
-                    break;
-                }
-            }
-        }
-        indexToPlaceVertex++;
-        return new GameMove(vertexToPlace, new Coordinate(x, y));
-    }
-
-    /**
      * Return a list of unplaced neighbors.
      * 
      * @param vertex the vertex to get the unplaced neighbors to
@@ -1080,10 +1022,9 @@ public class MixingPlayer implements NewPlayer {
      * @param AnnealingReverse first BruteForce then Mirroring, {@code percentage}
      *                         gives the percentage of BruteForce over the whole
      *                         game
-     * @param RadialStuff      only RadialStuff
      */
     public enum Strategy {
-        BruteForce, Mirroring, Percentage, Annealing, AnnealingReverse, RadialStuff;
+        BruteForce, Mirroring, Percentage, Annealing, AnnealingReverse;
     };
 
     /**

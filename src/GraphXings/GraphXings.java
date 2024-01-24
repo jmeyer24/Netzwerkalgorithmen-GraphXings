@@ -1,19 +1,18 @@
 package GraphXings;
 
 import GraphXings.Algorithms.NewPlayer;
-import GraphXings.Algorithms.NewRandomPlayer;
 import GraphXings.Game.GameInstance.*;
 import GraphXings.Game.League.NewLeague;
 import GraphXings.Game.League.NewLeagueResult;
-import GraphXings.NewFiles.MixingPlayer;
-import GraphXings.NewFiles.ConfigParameterOptimization;
-import GraphXings.NewFiles.MixingPlayer.Strategy;
 
 import java.io.File;
 import java.io.IOException;
 import GraphXings.Game.Match.NewMatch;
 import GraphXings.Game.Match.NewMatchResult;
 import java.util.ArrayList;
+
+// import all the players
+import GraphXings.NewFiles.*;
 
 public class GraphXings {
     public static void main(String[] args) {
@@ -32,49 +31,41 @@ public class GraphXings {
             e.printStackTrace();
         }
 
+        // add players
         ArrayList<NewPlayer> players = new ArrayList<>();
-        ConfigParameterOptimization config = new ConfigParameterOptimization();
-        // this instead gives us one single MixingPlayer with standard values
-        // ConfigParameterOptimization config = new ConfigParameterOptimization(true);
-        for (double relativeCircleSize : config.relativeCircleSizes) {
-            for (int sampleSize : config.sampleSizes) {
-                for (Strategy strategy : config.strategies) {
-                    if (strategy.equals(Strategy.Mirroring)) {
-                        players.add(new MixingPlayer(0.0, relativeCircleSize, sampleSize, 0, strategy));
-                    } else {
-                        for (int vertexSampleSize : config.vertexSampleSizes) {
-                            if (strategy.equals(Strategy.BruteForce)) {
-                                players.add(
-                                        new MixingPlayer(0.0, relativeCircleSize, sampleSize, vertexSampleSize,
-                                                strategy));
-                            } else {
-                                for (double percentage : config.percentages) {
-                                    players.add(new MixingPlayer(percentage, relativeCircleSize, sampleSize,
-                                            vertexSampleSize, strategy));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        if (players.size() < 2) {
-            players.add(new NewRandomPlayer("RandomPlayer"));
-            if (players.size() < 2) {
-                players.add(new NewRandomPlayer("RandomPlayer2"));
-            }
-        }
+        players.add(new Player04());
+        players.add(new Player05());
+        players.add(new Player06());
+        players.add(new Player07());
+        players.add(new Player09());
+        players.add(new Player10());
+        players.add(new Player11());
+        players.add(new Player12());
 
         // run the league setup
         // league -> matches -> games -> minimize/maximizing
         // RandomCycleFactory factory = new RandomCycleFactory(102060351, true);
         // PlanarGameInstanceFactory factory2 = new
         // PlanarGameInstanceFactory(102060352);
+
         long timeLimit = 300000000000l;
         long seed = 27081883;
         int bestOf = 1;
+
+        // ----------------------- game versions: objective --------------------
+        // NewMatch.MatchType matchType = NewMatch.MatchType.CROSSING_NUMBER;
         NewMatch.MatchType matchType = NewMatch.MatchType.CROSSING_ANGLE;
+        // ---------------------------------------------------------------------
+
+        // ----------------------- game versions: graphs --------------------
+        // only cycle
+        // RandomCycleFactory factory = new RandomCycleFactory(102060351, false);
+        // cycle and matching
+        // RandomCycleFactory factory = new RandomCycleFactory(102060351, true);
+        // planar
         PlanarGameInstanceFactory factory = new PlanarGameInstanceFactory(seed);
+        // ------------------------------------------------------------------
+
         runLeague(players, bestOf, timeLimit, factory, matchType, seed);
         // runRemainingMatches(player,players,bestOf,timeLimit,factory);
     }
