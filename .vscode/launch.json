@@ -9,6 +9,13 @@
       "name": "GraphXings",
       "request": "launch",
       "mainClass": "GraphXings.GraphXings",
+      "projectName": "Netzwerkalgorithmen-GraphXings_84d62ba7"
+    },
+    {
+      "type": "java",
+      "name": "GraphXings",
+      "request": "launch",
+      "mainClass": "GraphXings.GraphXings",
       "projectName": "Netzwerkalgorithmen-GraphXings_cf0610c7"
     },
     {
