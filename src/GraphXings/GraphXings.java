@@ -16,20 +16,20 @@ import GraphXings.NewFiles.*;
 
 public class GraphXings {
     public static void main(String[] args) {
-        // create a file to store the crossings number in them
-        // see MixingPlayer.java, writeCycleSizeToFile()
-        String path = "Statistics/Data/optimization.txt";
-        try {
-            File myObj = new File(path);
-            if (myObj.createNewFile()) {
-                System.out.println("File created: " + myObj.getName());
-            } else {
-                System.out.println("File already exists.");
-            }
-        } catch (IOException e) {
-            System.out.println("An error occurred.");
-            e.printStackTrace();
-        }
+        // // create a file to store the crossings number in them
+        // // see MixingPlayer.java, writeCycleSizeToFile()
+        // String path = "Statistics/Data/optimization.txt";
+        // try {
+        //     File myObj = new File(path);
+        //     if (myObj.createNewFile()) {
+        //         System.out.println("File created: " + myObj.getName());
+        //     } else {
+        //         System.out.println("File already exists.");
+        //     }
+        // } catch (IOException e) {
+        //     System.out.println("An error occurred.");
+        //     e.printStackTrace();
+        // }
 
         // add players
         ArrayList<NewPlayer> players = new ArrayList<>();
