@@ -5,8 +5,6 @@ import GraphXings.Game.GameInstance.*;
 import GraphXings.Game.League.NewLeague;
 import GraphXings.Game.League.NewLeagueResult;
 
-import java.io.File;
-import java.io.IOException;
 import GraphXings.Game.Match.NewMatch;
 import GraphXings.Game.Match.NewMatchResult;
 import java.util.ArrayList;
@@ -16,20 +14,6 @@ import GraphXings.NewFiles.*;
 
 public class GraphXings {
     public static void main(String[] args) {
-        // create a file to store the crossings number in them
-        // see MixingPlayer.java, writeCycleSizeToFile()
-        String path = "Statistics/Data/optimization.txt";
-        try {
-            File myObj = new File(path);
-            if (myObj.createNewFile()) {
-                System.out.println("File created: " + myObj.getName());
-            } else {
-                System.out.println("File already exists.");
-            }
-        } catch (IOException e) {
-            System.out.println("An error occurred.");
-            e.printStackTrace();
-        }
 
         // add players
         ArrayList<NewPlayer> players = new ArrayList<>();
@@ -42,32 +26,48 @@ public class GraphXings {
         players.add(new Player11());
         players.add(new Player12());
 
-        // run the league setup
-        // league -> matches -> games -> minimize/maximizing
-        // RandomCycleFactory factory = new RandomCycleFactory(102060351, true);
-        // PlanarGameInstanceFactory factory2 = new
-        // PlanarGameInstanceFactory(102060352);
-
         long timeLimit = 300000000000l;
         long seed = 27081883;
-        int bestOf = 1;
+        int bestOf = 5;
 
         // ----------------------- game versions: objective --------------------
         // NewMatch.MatchType matchType = NewMatch.MatchType.CROSSING_NUMBER;
-        NewMatch.MatchType matchType = NewMatch.MatchType.CROSSING_ANGLE;
+        // NewMatch.MatchType matchType = NewMatch.MatchType.CROSSING_ANGLE;
         // ---------------------------------------------------------------------
 
         // ----------------------- game versions: graphs --------------------
         // only cycle
-        // RandomCycleFactory factory = new RandomCycleFactory(102060351, false);
+        RandomCycleFactory randomCycleFactory = new RandomCycleFactory(123456, false);
         // cycle and matching
-        // RandomCycleFactory factory = new RandomCycleFactory(102060351, true);
+        RandomCycleFactory randomCycleFactoryMatching = new RandomCycleFactory(123456, true);
         // planar
-        PlanarGameInstanceFactory factory = new PlanarGameInstanceFactory(seed);
+        PlanarGameInstanceFactory planarFactory = new PlanarGameInstanceFactory(seed);
         // ------------------------------------------------------------------
 
-        runLeague(players, bestOf, timeLimit, factory, matchType, seed);
-        // runRemainingMatches(player,players,bestOf,timeLimit,factory);
+        System.out.println(
+                "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-");
+        System.out.println("CYCLE WITH CROSSING ANGLES");
+        runLeague(players, bestOf, timeLimit, randomCycleFactory, NewMatch.MatchType.CROSSING_ANGLE, seed);
+        System.out.println(
+                "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-");
+        System.out.println("CYCLE WITH CROSSING NUMBERS");
+        runLeague(players, bestOf, timeLimit, randomCycleFactory, NewMatch.MatchType.CROSSING_NUMBER, seed);
+        System.out.println(
+                "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-");
+        System.out.println("MATCHING AND CROSSING ANGLES");
+        runLeague(players, bestOf, timeLimit, randomCycleFactoryMatching, NewMatch.MatchType.CROSSING_ANGLE, seed);
+        System.out.println(
+                "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-");
+        System.out.println("MATCHING AND CROSSING NUMBERS");
+        runLeague(players, bestOf, timeLimit, randomCycleFactoryMatching, NewMatch.MatchType.CROSSING_NUMBER, seed);
+        System.out.println(
+                "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-");
+        System.out.println("PLANAR AND CROSSING ANGLES");
+        runLeague(players, bestOf, timeLimit, planarFactory, NewMatch.MatchType.CROSSING_ANGLE, seed);
+        System.out.println(
+                "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-");
+        System.out.println("PLANAR AND CROSSING NUMBERS");
+        runLeague(players, bestOf, timeLimit, planarFactory, NewMatch.MatchType.CROSSING_NUMBER, seed);
     }
 
     public static void runLeague(ArrayList<NewPlayer> players, int bestOf, long timeLimit, GameInstanceFactory factory,

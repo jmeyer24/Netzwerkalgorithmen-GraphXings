@@ -134,22 +134,22 @@ public class Player09 implements NewPlayer {
 
     @Override
     public GameMove maximizeCrossings(GameMove lastMove) {
-        return makeMove(lastMove, true);
+        return makeMove(lastMove, true, false);
     }
 
     @Override
     public GameMove minimizeCrossings(GameMove lastMove) {
-        return makeMove(lastMove, false);
+        return makeMove(lastMove, false, false);
     }
 
     @Override
     public GameMove maximizeCrossingAngles(GameMove lastMove) {
-        return null;
+        return makeMove(lastMove, true, true);
     }
 
     @Override
     public GameMove minimizeCrossingAngles(GameMove lastMove) {
-        return null;
+        return makeMove(lastMove, false, true);
     }
 
     public void addToHeatmap(Coordinate coordinate) {
@@ -158,7 +158,7 @@ public class Player09 implements NewPlayer {
         heatMap.get(heatMapX).set(heatMapY, heatMap.get(heatMapX).get(heatMapY) + 1);
     }
 
-    public GameMove makeMove(GameMove lastMove, boolean maximize) {
+    public GameMove makeMove(GameMove lastMove, boolean maximize, boolean includeAngles) {
         // First: Apply the last move by the opponent to the local GameState (and the
         // Crossing Calculator)
         if (lastMove != null) {
@@ -168,7 +168,7 @@ public class Player09 implements NewPlayer {
             betterEdgeCrossingRTree.insertVertex(lastMove.getVertex());
         }
         // Second: Compute the new move.
-        GameMove newMove = getMove(lastMove, maximize);
+        GameMove newMove = getMove(lastMove, maximize, includeAngles);
         // Third: Apply the new move to the local GameState (and the Crossing
         // Calculator)
         gs.applyMove(newMove);
@@ -179,21 +179,21 @@ public class Player09 implements NewPlayer {
         return newMove;
     }
 
-    public GameMove getMove(GameMove lastMove, boolean maximize) {
+    public GameMove getMove(GameMove lastMove, boolean maximize, boolean includeAngles) {
         if (maximize) {
             // double progress = (double) gs.getPlacedVertices().size() / g.getN();
             // System.out.print(progress);
             if (smallFieldStrategy) {
-                return getBruteForceMove(maximize, lastMove);
+                return getBruteForceMove(maximize, lastMove, includeAngles);
             }
             switch (strategy) {
                 case BruteForce:
-                    return getBruteForceMove(maximize, lastMove);
+                    return getBruteForceMove(maximize, lastMove, includeAngles);
                 case Mirroring:
                     return getMirroringMove(lastMove);
                 case Percentage:
                     if (r.nextDouble() < percentage) {
-                        return getBruteForceMove(maximize, lastMove);
+                        return getBruteForceMove(maximize, lastMove, includeAngles);
                     } else {
                         return getMirroringMove(lastMove);
                     }
@@ -201,11 +201,11 @@ public class Player09 implements NewPlayer {
                     if ((double) gs.getPlacedVertices().size() / g.getN() < percentage) {
                         return getMirroringMove(lastMove);
                     } else {
-                        return getBruteForceMove(maximize, lastMove);
+                        return getBruteForceMove(maximize, lastMove, includeAngles);
                     }
                 case AnnealingReverse:
                     if ((double) gs.getPlacedVertices().size() / g.getN() < percentage) {
-                        return getBruteForceMove(maximize, lastMove);
+                        return getBruteForceMove(maximize, lastMove, includeAngles);
                     } else {
                         return getMirroringMove(lastMove);
                     }
@@ -214,8 +214,8 @@ public class Player09 implements NewPlayer {
             }
         } else {
             if (smallFieldStrategy)
-                return getBruteForceMove(maximize, lastMove);
-            return getMinimizingMove(lastMove);
+                return getBruteForceMove(maximize, lastMove, includeAngles);
+            return getMinimizingMove(lastMove, includeAngles);
         }
     }
 
@@ -244,7 +244,8 @@ public class Player09 implements NewPlayer {
         return neighborsStolen > (nMovesSize / 1);
     }
 
-    public GameMove treeMinimizer(GameMove lastMove, Coordinate center, int treeWidth, int treeHeight) {
+    public GameMove treeMinimizer(GameMove lastMove, Coordinate center, int treeWidth, int treeHeight,
+            boolean includeAngles) {
         try {
             Vertex vertexToPlace = null;
             GameMove newMove = null;
@@ -415,9 +416,10 @@ public class Player09 implements NewPlayer {
             }
 
             // Found no easy move, do some random stuff and try again
-            return getBruteForceMove(false, lastMove); // Found no easy move, do some random stuff and try again
+            return getBruteForceMove(false, lastMove, includeAngles); // Found no easy move, do some random stuff and
+                                                                      // try again
         } catch (Exception ex) {
-            return getBruteForceMove(false, lastMove);
+            return getBruteForceMove(false, lastMove, includeAngles);
         }
     }
 
@@ -452,7 +454,7 @@ public class Player09 implements NewPlayer {
         }
     }
 
-    public GameMove getMinimizingMove(GameMove lastMove) {
+    public GameMove getMinimizingMove(GameMove lastMove, boolean includeAngles) {
         // If the enemy tries to counter our method by always placing our neighbours we
         // return to random playing
 
@@ -467,11 +469,11 @@ public class Player09 implements NewPlayer {
         // return getBruteForceMove(false, lastMove);
         // }
 
-        return treeMinimizer(lastMove, new Coordinate(width / 2, height / 2), width, height);
+        return treeMinimizer(lastMove, new Coordinate(width / 2, height / 2), width, height, includeAngles);
 
     }
 
-    public GameMove getBruteForceMove(boolean maximize, GameMove lastMove) {
+    public GameMove getBruteForceMove(boolean maximize, GameMove lastMove, boolean includeAngles) {
         long startTime = System.nanoTime();
         // get the first vertex that is not yet placed
         Vertex v = null;
@@ -561,7 +563,7 @@ public class Player09 implements NewPlayer {
 
         // Number of crossings before we place the vertex
         // Number of crossings before we place the vertex
-        int bestTotalCrossingsByVertex = maximize ? Integer.MIN_VALUE : Integer.MAX_VALUE;
+        double bestTotalCrossingsByVertex = maximize ? Integer.MIN_VALUE : Integer.MAX_VALUE;
         VertexSamplePair bestPair = null;
 
         // Find the best position (maximizing/minimizing crossings) we can place vertex
@@ -579,8 +581,8 @@ public class Player09 implements NewPlayer {
             for (Vertex vertexToSample : verticesToSample) {
                 // Add vertex sampling here
                 Coordinate coordinateToAdd = new Coordinate(xPositions.get(sample), yPositions.get(sample));
-                int crossingsAddedByVertex = betterEdgeCrossingRTree.testCoordinate(vertexToSample, coordinateToAdd,
-                        gs.getVertexCoordinates());
+                double crossingsAddedByVertex = betterEdgeCrossingRTree.testCoordinate(vertexToSample, coordinateToAdd,
+                        gs.getVertexCoordinates(), includeAngles);
                 // ??????? Error wenn mehr als ein Vertex abgefragt wird.
                 if (maximize ? crossingsAddedByVertex > bestTotalCrossingsByVertex
                         : crossingsAddedByVertex < bestTotalCrossingsByVertex) {

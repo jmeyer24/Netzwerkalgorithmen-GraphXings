@@ -75,16 +75,16 @@ public class NewGameResult {
 		this.objective = objective;
 
 		// where and whom to store
-		String path = "Statistics/Data/optimization.txt";
+		// String path = "Statistics/Data/optimization.txt";
 		// store the crossings number of our player there
-		try {
-			FileWriter myWriter = new FileWriter(path, true);
-			myWriter.write(announceResult() + "\n");
-			myWriter.close();
-		} catch (IOException e) {
-			System.out.println("An error occurred.");
-			e.printStackTrace();
-		}
+		// try {
+		// FileWriter myWriter = new FileWriter(path, true);
+		// myWriter.write(announceResult() + "\n");
+		// myWriter.close();
+		// } catch (IOException e) {
+		// System.out.println("An error occurred.");
+		// e.printStackTrace();
+		// }
 	}
 
 	/**

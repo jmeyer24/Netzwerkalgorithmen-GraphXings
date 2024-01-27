@@ -84,10 +84,12 @@ public class BetterEdgeCrossingRTree {
      * @param mapVertexToCoordinate the mapping from vertex to coordinate
      * @return number of crossings when adding the vertex at the coordinate
      */
-    public int testCoordinate(Vertex vertex, Coordinate coordinate, HashMap<Vertex, Coordinate> mapVertexToCoordinate) {
+    public double testCoordinate(Vertex vertex, Coordinate coordinate,
+            HashMap<Vertex, Coordinate> mapVertexToCoordinate,
+            boolean includeAngles) {
         mapVertexToCoordinate.put(vertex, coordinate);
         insertVertex(vertex);
-        int crossings = calculateCrossings(vertex, mapVertexToCoordinate);
+        double crossings = calculateCrossings(vertex, mapVertexToCoordinate, includeAngles);
 
         mapVertexToCoordinate.remove(vertex);
         removeVertex(vertex);
@@ -115,8 +117,9 @@ public class BetterEdgeCrossingRTree {
      *          this.vertices do need to
      *          have inserted the vertex already.
      */
-    public int calculateCrossings(Vertex vertex, HashMap<Vertex, Coordinate> mapVertexToCoordinate) {
-        int crossings = 0;
+    public double calculateCrossings(Vertex vertex, HashMap<Vertex, Coordinate> mapVertexToCoordinate,
+            boolean includeAngles) {
+        double crossings = 0;
 
         int x1 = Integer.MAX_VALUE;
         int y1 = Integer.MAX_VALUE;
@@ -180,7 +183,12 @@ public class BetterEdgeCrossingRTree {
                     Segment createdSegment = new Segment(mapVertexToCoordinate.get(createdEdge.getS()),
                             mapVertexToCoordinate.get(createdEdge.getT()));
                     if (Segment.intersect(foundSegment, createdSegment)) {
-                        crossings++;
+                        if (includeAngles) {
+                            crossings += Segment.squaredCosineOfAngle(foundSegment, createdSegment);
+                        } else {
+                            crossings++;
+                        }
+
                     }
                 }
             }

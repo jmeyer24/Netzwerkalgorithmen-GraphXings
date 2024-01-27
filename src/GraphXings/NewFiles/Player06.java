@@ -82,6 +82,7 @@ public class Player06 implements NewPlayer {
         this.sampleSize = 30;
         this.percentage = 0.93;
         this.strategy = Strategy.Annealing;
+        this.r = new Random(this.name.hashCode());
     }
 
     /**
@@ -100,22 +101,22 @@ public class Player06 implements NewPlayer {
 
     @Override
     public GameMove maximizeCrossings(GameMove lastMove) {
-        return makeMove(lastMove, true);
+        return makeMove(lastMove, true, false);
     }
 
     @Override
     public GameMove minimizeCrossings(GameMove lastMove) {
-        return makeMove(lastMove, false);
+        return makeMove(lastMove, false, false);
     }
 
     @Override
     public GameMove maximizeCrossingAngles(GameMove lastMove) {
-        return null;
+        return makeMove(lastMove, true, true);
     }
 
     @Override
     public GameMove minimizeCrossingAngles(GameMove lastMove) {
-        return null;
+        return makeMove(lastMove, false, true);
     }
 
     public void addToHeatmap(Coordinate coordinate) {
@@ -124,7 +125,7 @@ public class Player06 implements NewPlayer {
         heatMap.get(heatMapX).set(heatMapY, heatMap.get(heatMapX).get(heatMapY) + 1);
     }
 
-    public GameMove makeMove(GameMove lastMove, boolean maximize) {
+    public GameMove makeMove(GameMove lastMove, boolean maximize, boolean includeAngles) {
         // First: Apply the last move by the opponent to the local GameState (and the
         // Crossing Calculator)
         if (lastMove != null) {
@@ -135,7 +136,7 @@ public class Player06 implements NewPlayer {
 
         }
         // Second: Compute the new move.
-        GameMove newMove = getMove(lastMove, maximize);
+        GameMove newMove = getMove(lastMove, maximize, includeAngles);
         // Third: Apply the new move to the local GameState (and the Crossing
         // Calculator)
         gs.applyMove(newMove);
@@ -146,18 +147,18 @@ public class Player06 implements NewPlayer {
         return newMove;
     }
 
-    public GameMove getMove(GameMove lastMove, boolean maximize) {
+    public GameMove getMove(GameMove lastMove, boolean maximize, boolean includeAngles) {
         if (maximize) {
             // double progress = (double) gs.getPlacedVertices().size() / g.getN();
             // System.out.print(progress);
             switch (strategy) {
                 case BruteForce:
-                    return getBruteForceMove(maximize, lastMove);
+                    return getBruteForceMove(maximize, lastMove, includeAngles);
                 case Mirroring:
                     return getMirroringMove(lastMove);
                 case Percentage:
                     if (r.nextDouble() < percentage) {
-                        return getBruteForceMove(maximize, lastMove);
+                        return getBruteForceMove(maximize, lastMove, includeAngles);
                     } else {
                         return getMirroringMove(lastMove);
                     }
@@ -165,11 +166,11 @@ public class Player06 implements NewPlayer {
                     if ((double) gs.getPlacedVertices().size() / g.getN() < percentage) {
                         return getMirroringMove(lastMove);
                     } else {
-                        return getBruteForceMove(maximize, lastMove);
+                        return getBruteForceMove(maximize, lastMove, includeAngles);
                     }
                 case AnnealingReverse:
                     if ((double) gs.getPlacedVertices().size() / g.getN() < percentage) {
-                        return getBruteForceMove(maximize, lastMove);
+                        return getBruteForceMove(maximize, lastMove, includeAngles);
                     } else {
                         return getMirroringMove(lastMove);
                     }
@@ -177,7 +178,7 @@ public class Player06 implements NewPlayer {
                     return getRandomMove();
             }
         } else {
-            return getMinimizingMove(lastMove);
+            return getMinimizingMove(lastMove, includeAngles);
         }
     }
 
@@ -209,7 +210,7 @@ public class Player06 implements NewPlayer {
         return false;
     }
 
-    public GameMove getMinimizingMove(GameMove lastMove) {
+    public GameMove getMinimizingMove(GameMove lastMove, boolean includeAngles) {
         Vertex vertexToPlace;
         GameMove newMove = null;
         // If the enemy tries to counter our method by always placing our neighbours we
@@ -217,7 +218,7 @@ public class Player06 implements NewPlayer {
 
         if (enemyCounterMinimzer()) {
             lastOwnMove = null;
-            return getBruteForceMove(false, lastMove);
+            return getBruteForceMove(false, lastMove, includeAngles);
         }
 
         if (lastOwnMove != null) {
@@ -361,10 +362,11 @@ public class Player06 implements NewPlayer {
 
         // Found no easy move, do some random stuff and try again
         lastOwnMove = null;
-        return getBruteForceMove(false, lastMove); // Found no easy move, do some random stuff and try again
+        return getBruteForceMove(false, lastMove, includeAngles); // Found no easy move, do some random stuff and try
+                                                                  // again
     }
 
-    public GameMove getBruteForceMove(boolean maximize, GameMove lastMove) {
+    public GameMove getBruteForceMove(boolean maximize, GameMove lastMove, boolean includeAngles) {
         // get the first vertex that is not yet placed
         Vertex v = null;
         ArrayList<Vertex> vertices = new ArrayList<>();
@@ -437,15 +439,15 @@ public class Player06 implements NewPlayer {
         }
 
         // Number of crossings before we place the vertex
-        int bestTotalCrossingsByVertex = maximize ? Integer.MIN_VALUE : Integer.MAX_VALUE;
+        double bestTotalCrossingsByVertex = maximize ? Integer.MIN_VALUE : Integer.MAX_VALUE;
         int bestSample = 0;
         // Find best position (maximizing crossings) we can place vertex v at
         for (int sample = 0; sample < sampleSize; sample++) {
             if (gs.getUsedCoordinates()[xPositions.get(sample)][yPositions.get(sample)] != 0)
                 continue;
             Coordinate coordinateToAdd = new Coordinate(xPositions.get(sample), yPositions.get(sample));
-            int crossingsAddedByVertex = betterEdgeCrossingRTree.testCoordinate(v, coordinateToAdd,
-                    gs.getVertexCoordinates());
+            double crossingsAddedByVertex = betterEdgeCrossingRTree.testCoordinate(v, coordinateToAdd,
+                    gs.getVertexCoordinates(), includeAngles);
             if (maximize ? crossingsAddedByVertex > bestTotalCrossingsByVertex
                     : crossingsAddedByVertex < bestTotalCrossingsByVertex) {
                 bestSample = sample;
