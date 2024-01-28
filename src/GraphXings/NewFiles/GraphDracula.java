@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import com.github.davidmoten.rtree2.Iterables;
@@ -120,8 +121,30 @@ public class GraphDracula implements NewPlayer {
         this.sampleSize = 30;
         this.vertexSampleSize = 1;
         this.percentage = 0.93;
+        this.fieldPercentage = 17;
         this.relativeCircleSize = 0.5;
         this.maxStrat = MaximizingStrategy.RadialStuff;
+        this.r = new Random(this.name.hashCode());
+    }
+
+    /**
+     * Constructs a {@code GraphDracula} with the specified strategies
+     *
+     * @param maxStrat the {@link MaximizingStrategy} we choose
+     * @param minStrat the {@link MinimizingStrategy} we choose
+     */
+    public GraphDracula(MaximizingStrategy maxStrat, MinimizingStrategy minStrat) {
+        this.sampleSize = 30;
+        this.vertexSampleSize = 1;
+        this.percentage = 0.93;
+        this.fieldPercentage = 17;
+        this.relativeCircleSize = 0.5;
+
+        // use the given strategies
+        this.maxStrat = maxStrat;
+        this.minStrat = minStrat;
+
+        this.name = "GraphDracula_" + maxStrat + "_" + minStrat;
         this.r = new Random(this.name.hashCode());
     }
 
@@ -320,16 +343,18 @@ public class GraphDracula implements NewPlayer {
                         return getMirroringMove(lastMove);
                     }
                 case RadialStuff:
-                    return getRadialStuffMove(lastMove);
+                    return getRadialStuffMove(lastMove, role);
                 default:
                     return getRandomMove();
             }
         } else {
             switch (minStrat) {
                 case EdgeDirectionMean:
-                    return getEdgeDirectionMeanMove(lastMove);
+                    return getEdgeDirectionMeanMove(lastMove, role);
                 case TreeMinimizer:
-                    return getTreeMinimizerMove(lastMove);
+                    return getTreeMinimizerMove(lastMove, role);
+                case BorderWalk:
+                    return getBorderWalkMove(lastMove, role);
                 default:
                     return getRandomMove();
             }
@@ -379,7 +404,7 @@ public class GraphDracula implements NewPlayer {
      * @TODO write implementation Specifics
      * @TODO constant {@code WALKING_DISTANCE} needs optimization
      */
-    public GameMove getTreeMinimizerMove(GameMove lastMove) {
+    public GameMove getTreeMinimizerMove(GameMove lastMove, Role role) {
         Coordinate center = new Coordinate(this.width / 2, this.height / 2);
         int treeWidth = this.width;
         int treeHeight = this.height;
@@ -569,7 +594,210 @@ public class GraphDracula implements NewPlayer {
         }
 
         // fallback: get a minimizing brute force move instead
-        return getBruteForceMove(lastMove, Role.MIN);
+        return getBruteForceMove(lastMove, role);
+    }
+
+    /**
+     * Return a valid game move aiding the objective of minimizing
+     * 
+     * @param lastMove the last move made by the opponent, {@code null} if it is
+     *                 the first move of the game. Used for fallback brute force
+     *                 method
+     * @return a valid game move
+     * @implNote
+     * @implSpec
+     * @TODO write implementation Specifics and Note
+     */
+    public GameMove getBorderWalkMove(GameMove lastMove, Role role) {
+        Vertex vertexToPlace;
+        GameMove newMove = null;
+        if (lastOwnMove != null) {
+            // System.out.println("lastOwnMove != null");
+            ArrayList<Vertex> unplacedNeighbors = getUnplacedNeighbors(lastOwnMove.getVertex());
+            if (unplacedNeighbors.size() != 0) {
+                vertexToPlace = unplacedNeighbors.get(unplacedNeighbors.size() - 1);
+                int lastX = lastOwnMove.getCoordinate().getX();
+                int lastY = lastOwnMove.getCoordinate().getY();
+                // System.out.println(lastX + " " + lastY);
+                if (lastX < lastY) {// Bottom left area
+                    // System.out.print("lastX < lastY");
+                    if (height - lastY < lastX) {// Bottom row
+                        // System.out.print("height - lastY < lastX");
+                        while (true) {
+                            if (lastX > 0 && gs.getUsedCoordinates()[lastX - 1][lastY] == 0) {
+                                newMove = new GameMove(vertexToPlace, new Coordinate(lastX - 1, lastY));
+                                break;
+                            } else if (lastY > 0 && gs.getUsedCoordinates()[lastX][lastY - 1] == 0) {
+                                newMove = new GameMove(vertexToPlace, new Coordinate(lastX, lastY - 1));
+                                break;
+                            } else {
+                                lastX--;
+                                lastY--;
+                                if (lastX < 0 || lastY < 0)
+                                    break;
+                            }
+                        }
+                    } else {// left column
+                        // System.out.print("else");
+                        while (true) {
+                            if (lastX < width - 1 && gs.getUsedCoordinates()[lastX + 1][lastY] == 0) {
+                                newMove = new GameMove(vertexToPlace, new Coordinate(lastX + 1, lastY));
+                                break;
+                            } else if (lastY > 0 && gs.getUsedCoordinates()[lastX][lastY - 1] == 0) {
+                                newMove = new GameMove(vertexToPlace, new Coordinate(lastX, lastY - 1));
+                                break;
+                            } else {
+                                lastX++;
+                                lastY--;
+                                if (lastX > width - 1 || lastY < 0)
+                                    break;
+                            }
+                        }
+                    }
+                } else {// Top right area
+                    // System.out.print("else");
+                    if (lastY < width - lastX) {// Top row
+                        // System.out.print("lastY < width - lastX");
+                        while (true) {
+                            // System.out.print(lastX + " " + lastY);
+                            if (lastX < width - 1 && gs.getUsedCoordinates()[lastX + 1][lastY] == 0) {
+                                // System.out.println("if");
+                                newMove = new GameMove(vertexToPlace, new Coordinate(lastX + 1, lastY));
+                                break;
+                            } else if (lastY < height - 1 && gs.getUsedCoordinates()[lastX][lastY + 1] == 0) {
+                                // System.out.println("elseif");
+                                newMove = new GameMove(vertexToPlace, new Coordinate(lastX, lastY + 1));
+                                break;
+                            } else {
+                                // System.out.println("else");
+                                lastX++;
+                                lastY++;
+                                if (lastX > width - 1 || lastY > height - 1)
+                                    break;
+                            }
+                        }
+                    } else {// Right column
+                        // System.out.print("else");
+                        while (true) {
+                            if (lastX > 0 && gs.getUsedCoordinates()[lastX - 1][lastY] == 0) {
+                                newMove = new GameMove(vertexToPlace, new Coordinate(lastX - 1, lastY));
+                                break;
+                            } else if (lastY < height - 1 && gs.getUsedCoordinates()[lastX][lastY + 1] == 0) {
+                                newMove = new GameMove(vertexToPlace, new Coordinate(lastX, lastY + 1));
+                                break;
+                            } else {
+                                lastX--;
+                                lastY++;
+                                if (lastX < 0 || lastY > height - 1)
+                                    break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // We either have no real last move or no neighbor for our lastmove
+        if (newMove == null) {
+            // System.out.println("newMove == null");
+            int midpointID = getLargestGapMidpointID();
+            vertexToPlace = mapIdToVertex.get(Integer.toString(midpointID));
+            int circumference = height * 2 + width * 2 - 4;
+            int fieldID = midpointID % circumference; // Basically map a vertex to a distinct field vertex one
+                                                      // placed on 0, 0. Vertex two placed on 0, 1. ....
+            if (midpointID == 100) {
+                // System.out.println("test");
+            }
+            int x = 0;
+            int y = 0;
+            while (true) {
+                // Place on top row (ID 0-9)
+                // Place on right column (ID 10-18)
+                // Place on bottom row (ID 19-27)
+                // Place on left column (ID 28-35)
+                if (fieldID < width) {
+                    x = fieldID;
+                    y = 0;
+                } else if (fieldID < width + height - 1) {
+                    x = width - 1;
+                    y = fieldID - width + 1;
+                } else if (fieldID < width * 2 + height - 2) {
+                    x = width - 1 - (fieldID - width - height + 2);
+                    y = height - 1;
+                } else if (fieldID < circumference) {
+                    x = 0;
+                    y = height - 1 - (fieldID - 2 * width - height + 3);
+                } else {
+                    break;
+                }
+
+                // check if it is an unplaced position
+                if (gs.getUsedCoordinates()[x][y] == 0) {
+                    newMove = new GameMove(vertexToPlace, new Coordinate(x, y));
+                    break;
+                }
+                fieldID++;
+            }
+            // if (newMove != null && !gs.checkMoveValidity(newMove)) {
+            // System.out.println("bad");
+            // }
+        }
+        if (newMove != null) {
+            // System.out.println("newMove != null");
+            // System.out.println(newMove.getCoordinate().getX() + " " +
+            // newMove.getCoordinate().getY());
+            lastOwnMove = newMove;
+            return newMove;
+        }
+        // System.out.println("getBruteForce");
+
+        // Found no easy move, do some random stuff and try again
+        lastOwnMove = null;
+        return getBruteForceMove(lastMove, role); // Found no easy move, do some random stuff and try again
+    }
+
+    /**
+     * get the vertex id that is the furthers from all already placed vertices
+     * 
+     * @return a vertex id
+     */
+    public int getLargestGapMidpointID() {
+        if (gs.getPlacedVertices().isEmpty()) {
+            return g.getN() / 2;
+        }
+
+        // Convert the IDs to a list of integers and sort it
+        List<Integer> ids = gs.getPlacedVertices().stream().map(vertex -> Integer.parseInt(vertex.getId())).sorted()
+                .collect(Collectors.toList());
+
+        // Initialize variables to track the largest gap and its midpoint
+        int largestGap = 0;
+        int largestGapMidpoint = 0;
+
+        // Check the gap between each pair of consecutive IDs
+        for (int i = 0; i < ids.size() - 1; i++) {
+            int gap = ids.get(i + 1) - ids.get(i);
+            if (gap > largestGap) {
+                // System.out.println("gap " + gap + " with " + (i + 1) + " and id " + ids.get(i
+                // + 1) + " and " + i
+                // + " and id " + ids.get(i));
+                largestGap = gap;
+                largestGapMidpoint = ids.get(i) + gap / 2;
+            }
+        }
+
+        // Check the gap between the last and first ID
+        int finalGap = g.getN() + 1 - ids.get(ids.size() - 1);
+        if (finalGap > largestGap) {
+            // System.out.println("second");
+            // System.out.println("gap " + finalGap + " with id 1 and " + (ids.size() - 1)
+            // + " and id " + ids.get(ids.size() - 1));
+            // System.out.println(ids);
+            // System.out.println(ids.size());
+            largestGapMidpoint = (ids.get(ids.size() - 1) + finalGap / 2) % g.getN();
+        }
+        // System.out.println(largestGapMidpoint);
+
+        return largestGapMidpoint;
     }
 
     public void addToMeanAngle(Vertex vertex) {
@@ -590,12 +818,12 @@ public class GraphDracula implements NewPlayer {
         }
     }
 
-    public GameMove getEdgeDirectionMeanMove(GameMove lastMove) {
+    public GameMove getEdgeDirectionMeanMove(GameMove lastMove, Role role) {
         Vertex lastPlacedVertex = lastMove.getVertex();
         addToMeanAngle(lastPlacedVertex);
         ArrayList<Vertex> vertices = getUnplacedNeighbors(lastPlacedVertex);
         if (vertices.isEmpty()) {
-            GameMove bruteForceMove = getBruteForceMove(lastMove, Role.MIN);
+            GameMove bruteForceMove = getBruteForceMove(lastMove, role);
             addToMeanAngle(bruteForceMove.getVertex());
             return bruteForceMove;
         }
@@ -615,7 +843,7 @@ public class GraphDracula implements NewPlayer {
             x = (int) (Math.cos(angle) * distance) + lastMove.getCoordinate().getX();
             y = (int) (Math.sin(angle) * distance) + lastMove.getCoordinate().getY();
             if (x < 0 || y < 0 || x >= width || y >= height) {
-                GameMove bruteForceMove = getBruteForceMove(lastMove, Role.MIN);
+                GameMove bruteForceMove = getBruteForceMove(lastMove, role);
                 addToMeanAngle(bruteForceMove.getVertex());
                 return bruteForceMove;
             }
@@ -624,7 +852,7 @@ public class GraphDracula implements NewPlayer {
             distance++;
         }
         if (gs.getUsedCoordinates()[x][y] != 0) {
-            GameMove bruteForceMove = getBruteForceMove(lastMove, Role.MIN);
+            GameMove bruteForceMove = getBruteForceMove(lastMove, role);
             addToMeanAngle(bruteForceMove.getVertex());
             return bruteForceMove;
         }
@@ -919,7 +1147,7 @@ public class GraphDracula implements NewPlayer {
      *                 the first move of the game.
      * @return a valid game move
      */
-    public GameMove getRadialStuffMove(GameMove lastMove) {
+    public GameMove getRadialStuffMove(GameMove lastMove, Role role) {
         try {
             Vertex vertexToPlace = null;
             int x = 0;
@@ -985,7 +1213,7 @@ public class GraphDracula implements NewPlayer {
 
             return new GameMove(vertexToPlace, new Coordinate(x, y));
         } catch (Exception e) {
-            return getBruteForceMove(lastMove, Role.MAX);
+            return getBruteForceMove(lastMove, role);
         }
     }
 
@@ -1150,7 +1378,7 @@ public class GraphDracula implements NewPlayer {
      * @param TreeMinimizer     explanation here
      */
     public enum MinimizingStrategy {
-        EdgeDirectionMean, TreeMinimizer;
+        EdgeDirectionMean, TreeMinimizer, BorderWalk;
     };
 
     /**
