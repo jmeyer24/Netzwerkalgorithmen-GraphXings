@@ -661,6 +661,16 @@ public class GraphDracula implements NewPlayer {
     }
 
     /**
+     * checks if the given role is a angle role, e.g. either Role.MAX_ANGLES or
+     * ROLE.MIN_ANGLE
+     * 
+     * @return
+     */
+    public boolean roleIsAngle(Role role) {
+        return (role == Role.MAX_ANGLE || role == Role.MIN_ANGLE);
+    }
+
+    /**
      * Return a valid game move that was found by (semi) brute force.
      * 
      * @param lastMove the last move made by the opponent, {@code null} if it is the
@@ -784,8 +794,7 @@ public class GraphDracula implements NewPlayer {
                 // Add vertex sampling here
                 Coordinate coordinateToAdd = new Coordinate(xPositions.get(sample), yPositions.get(sample));
                 double crossingsAddedByVertex = this.betterEdgeCrossingRTree.testCoordinate(vertexToSample,
-                        coordinateToAdd,
-                        gs.getVertexCoordinates());
+                        coordinateToAdd, gs.getVertexCoordinates(), roleIsAngle(role));
                 // ??????? Error wenn mehr als ein Vertex abgefragt wird.
                 if (roleIsMax(role) ? crossingsAddedByVertex > bestTotalCrossingsByVertex
                         : crossingsAddedByVertex < bestTotalCrossingsByVertex) {
