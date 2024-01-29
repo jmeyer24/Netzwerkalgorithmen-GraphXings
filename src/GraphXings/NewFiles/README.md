@@ -1,2 +1,7 @@
-Use MixingPlayer with this signature: public MixingPlayer()
+Disziplin Cycle: new GraphDracula_NichtPlaettbar()
+
+Disziplin Matching Cycle: new GraphDracula_NichtPlaettbar()
+
+Disziplin Planar: new GraphDracula_Plaettbar()
+
 Im "jar"-Ordner befinden sich beide notwendigen JAR-Dateien (rtree2-0.9.3.jar und guava-mini-0.1.4.jar). Diese müssen mit der IDE als Library hinzugefügt werden (bei Intellij: Rechtsklick auf JAR-Datei > Add as library)
