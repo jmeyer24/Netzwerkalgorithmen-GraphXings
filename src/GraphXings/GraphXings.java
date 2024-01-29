@@ -22,11 +22,11 @@ public class GraphXings {
                 // add players
                 ArrayList<NewPlayer> players = new ArrayList<>();
                 StrategyOptimization config = new StrategyOptimization();
-                for (MaximizingStrategy maxStrat : config.maxStrats) {
-                        for (MinimizingStrategy minStrat : config.minStrats) {
-                                players.add(new GraphDracula(maxStrat, minStrat));
-                        }
-                }
+                // for (MaximizingStrategy maxStrat : config.maxStrats) {
+                // for (MinimizingStrategy minStrat : config.minStrats) {
+                // players.add(new GraphDracula(maxStrat, minStrat));
+                // }
+                // }
                 // players.add(new Player04());
                 // players.add(new Player05());
                 // players.add(new Player06());
@@ -35,10 +35,12 @@ public class GraphXings {
                 // players.add(new Player10());
                 // players.add(new Player11());
                 // players.add(new Player12());
+                players.add(new GraphDracula_NichtPlaettbar());
+                players.add(new GraphDracula_Plaettbar());
 
                 long timeLimit = 300000000000l; // 5 mins?
                 long seed = 29;
-                int bestOf = 5;
+                int bestOf = 3;
 
                 // ----------------------- game versions: objective --------------------
                 // MatchType matchType = MatchType.CROSSING_NUMBER;

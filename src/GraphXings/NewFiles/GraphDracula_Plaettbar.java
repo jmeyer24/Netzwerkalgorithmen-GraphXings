@@ -123,8 +123,6 @@ public class GraphDracula_Plaettbar implements NewPlayer {
         this.percentage = 0.93;
         this.fieldPercentage = 17;
         this.relativeCircleSize = 0.5;
-        this.maxStrat = MaximizingStrategy.RadialStuff;
-        this.maxStrat = MaximizingStrategy.RadialStuff;
         this.r = new Random(this.name.hashCode());
     }
 
